@@ -6,17 +6,16 @@
     <title>Registration</title>
 </head>
 <body>
-<form modelAttribute="userForm" th:action="@{/register}" method="POST">
-    <span th:if="${hello != null}" th:text="${hello}"/>
+<form modelAttribute="user" th:action="@{/register}" method="POST">
     <div th:if="${errors != null}">
         <ul>
             <li th:each="err : ${errors}" th:text="${err}" />
         </ul>
     </div>
-    <div><label>Username: <input type="text" name="username"/> </label></div>
-    <div><label>Email : <input type="text" name="email"/> </label></div>
-    <div><label>Password: <input type="password" name="password"/> </label></div>
-    <div><label>Password Confirmation: <input type="password" name="passwordConfirm"/> </label></div>
+    <div><label>Username: <input type="text" name="username"/></label></div>
+    <div><label>Email: <input type="text" name="email"/></label></div>
+    <div><label>Password: <input type="password" name="password"/></label></div>
+    <div><label>Password Confirmation: <input type="password" name="passwordConfirm"/></label></div>
     <div><input type="submit" value="Register"/></div>
 </form>
 </body>

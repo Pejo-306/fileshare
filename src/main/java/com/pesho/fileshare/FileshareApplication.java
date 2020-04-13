@@ -14,7 +14,7 @@ public class FileshareApplication {
 	}
 
 	@Bean(name = "validationProperties")
-	public static PropertiesFactoryBean mapper() {
+	public static PropertiesFactoryBean validationPropertiesMapper() {
 		PropertiesFactoryBean bean = new PropertiesFactoryBean();
 		bean.setLocation(new ClassPathResource("validation.properties"));
 		return bean;

@@ -20,19 +20,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) {
-        final boolean accountNonExpired = true;
-        final boolean credentialsNonExpired = true;
-        final boolean accountNonLocked = true;
-
         User user = userRepository.findByUsername(username);
         if (user == null) throw new UsernameNotFoundException(username);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
                 user.isEnabled(),
-                accountNonExpired,
-                credentialsNonExpired,
-                accountNonLocked,
+                true,   // accountNonExpired
+                true,   // credentialsNonExpired
+                true,   // accountNonLocked
                 new HashSet<>()
         );
     }
