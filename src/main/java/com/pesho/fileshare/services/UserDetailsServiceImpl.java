@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService{
+public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
@@ -20,8 +20,20 @@ public class UserDetailsServiceImpl implements UserDetailsService{
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) {
+        final boolean accountNonExpired = true;
+        final boolean credentialsNonExpired = true;
+        final boolean accountNonLocked = true;
+
         User user = userRepository.findByUsername(username);
         if (user == null) throw new UsernameNotFoundException(username);
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new HashSet<>());
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                user.isEnabled(),
+                accountNonExpired,
+                credentialsNonExpired,
+                accountNonLocked,
+                new HashSet<>()
+        );
     }
 }
