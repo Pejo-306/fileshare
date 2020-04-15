@@ -35,6 +35,7 @@ public class FileshareController {
         Folder rootFolder = user.getRootFolder();
         Set<Folder> subRootFolders = rootFolder.getNestedFolders();
         model.addAttribute("subRootFolders", subRootFolders);
+        model.addAttribute("rootFolder", rootFolder);
         return "fileshare";
     }
 
