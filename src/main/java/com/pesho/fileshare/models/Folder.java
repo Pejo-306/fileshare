@@ -23,7 +23,7 @@ public class Folder {
     @JoinColumn(name = "parent_id")
     private Folder parent;
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private Set<Folder> nestedFolders;
 
     public Folder() {

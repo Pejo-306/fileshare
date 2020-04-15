@@ -3,7 +3,7 @@ function expandFolder() {
     var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + folderId;
 
     if ($(this).hasClass("folder-unopened")) {
-        var nestedFoldersListId = `nested-folders-of-${folderId}`;
+        var nestedFoldersListId = getNestedFoldersListId(folderId);
 
         if ($(`#${nestedFoldersListId}`).length) {
             // if the nested folders have already been retrieved
@@ -72,6 +72,68 @@ function cancelAddFolderEvent() {
     newFolderFields.remove();
 }
 
+function renameFolderButtonEvent() {
+    var folderName = $(this).parent().find("> span.folder-name").text();
+    var deleteFolderButton = $(this).parent().find("> .folder-delete-btn");
+    var renameFolderForm =
+        `<span>
+            <input type="text" name="name" placeholder="${folderName}"/>
+            <button class="_confirm-rename-folder-event-unattached" type="Button">Confirm</button>
+            <button class="_cancel-rename-folder-event-unattached" type="Button">Cancel</button>
+         </span>`;
+
+    // disable and hide 'Rename' and 'Delete' buttons
+    $(this).prop("disabled", true);
+    $(this).hide();
+    deleteFolderButton.prop("disabled", true);
+    deleteFolderButton.hide();
+
+    deleteFolderButton.before(renameFolderForm);
+
+    $("#root-folder-container").trigger("change");
+}
+
+function confirmRenameFolderEvent() {
+    var folderContainer = $(this).parent().parent();
+    var newFolderName = $(this).parent().find("input:first-child").val();
+    var folderId = parseInt(folderContainer .attr("folderId"));
+    var requestUrl = "/fileshare/rename-folder";
+    var parameters = { folderId: folderId, newFolderName: newFolderName };
+
+    $.ajax({
+        url: requestUrl,
+        type: "PATCH",
+        data: parameters,
+        success: function(data) {
+            if (data["success"]) {
+                var folderNameContainer = folderContainer.find("> span.folder-name");
+                folderNameContainer.text(newFolderName);
+            }
+        }
+    });
+
+    removeRenameFolderFields($(this));
+}
+
+function cancelRenameFolderEvent() {
+    removeRenameFolderFields($(this));
+}
+
+function removeRenameFolderFields(buttonElement) {
+    var renameFolderButton = buttonElement.parent().parent().find(".folder-rename-btn");
+    var deleteFolderButton = buttonElement.parent().parent().find("> .folder-delete-btn");
+    var renameFolderFields = buttonElement.parent();
+
+    // enable 'Rename' and 'Delete' buttons
+    renameFolderButton.prop("disabled", false);
+    renameFolderButton.show();
+    deleteFolderButton.prop("disabled", false);
+    deleteFolderButton.show();
+
+    // remove rename folder field and buttons
+    renameFolderFields.remove();
+}
+
 function deleteFolderEvent() {
     var parentContainer = $(this).parent();
     var folderName = parentContainer.find("> span.folder-name").text();
@@ -95,7 +157,7 @@ function deleteFolderEvent() {
 }
 
 function requestSubFolders(requestUrl, parentFolderId) {
-    var nestedFoldersListId = `nested-folders-of-${parentFolderId}`;
+    var nestedFoldersListId = getNestedFoldersListId(parentFolderId);
 
     $.get(requestUrl, function(data) {
         var parentFolder = $("#root-folder-container").find(`[folderId="${parentFolderId}"]`);
@@ -112,7 +174,8 @@ function requestSubFolders(requestUrl, parentFolderId) {
                 `<li folderId="${id}">\n
                     <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>\n
                     <span class="folder-name">${name}</span><span>/</span>\n
-                    <button class="_delete-folder-event-unattached" type="button">Delete</button>
+                    <button class="folder-rename-btn _rename-folder-event-unattached" type="button">Rename</button>
+                    <button class="folder-delete-btn _delete-folder-event-unattached" type="button">Delete</button>
                  </li>\n`;
         });
         folderList += "</ul>\n";
@@ -123,6 +186,10 @@ function requestSubFolders(requestUrl, parentFolderId) {
     });
 }
 
+function getNestedFoldersListId(parentFolderId) {
+    return `nested-folders-of-${parentFolderId}`;
+}
+
 $(document).ready(function() {
     // setup CSRF for AJAX POST request
     var token = $("meta[name='_csrf']").attr("content");
@@ -131,26 +198,22 @@ $(document).ready(function() {
         xhr.setRequestHeader(header, token);
     });
 
+    var eventHandlers = {
+         "_folder-expand-event-unattached": expandFolder,
+         "_new-folder-event-unattached": newFolderButtonEvent,
+         "_add-folder-event-unattached": addFolderEvent,
+         "_cancel-add-folder-event-unattached": cancelAddFolderEvent,
+         "_delete-folder-event-unattached": deleteFolderEvent,
+         "_rename-folder-event-unattached": renameFolderButtonEvent,
+         "_confirm-rename-folder-event-unattached": confirmRenameFolderEvent,
+         "_cancel-rename-folder-event-unattached": cancelRenameFolderEvent,
+    };
     $("#root-folder-container").change(function() {
-        $("._folder-expand-event-unattached").each(function(index) {
-            $(this).click(expandFolder);
-            $(this).removeClass("_folder-expand-event-unattached");
-        });
-        $("._new-folder-event-unattached").each(function(index) {
-            $(this).click(newFolderButtonEvent);
-            $(this).removeClass("_new-folder-event-unattached");
-        });
-        $("._add-folder-event-unattached").each(function(index) {
-            $(this).click(addFolderEvent);
-            $(this).removeClass("_add-folder-event-unattached");
-        });
-        $("._cancel-add-folder-event-unattached").each(function(index) {
-            $(this).click(cancelAddFolderEvent);
-            $(this).removeClass("_cancel-add-folder-event-unattached");
-        });
-        $("._delete-folder-event-unattached").each(function(index) {
-            $(this).click(deleteFolderEvent);
-            $(this).removeClass("_delete-folder-event-unattached");
+        Object.entries(eventHandlers).forEach(([eventClass, handler]) => {
+            $(`.${eventClass}`).each(function(index) {
+                $(this).click(handler);
+                $(this).removeClass(eventClass);
+            });
         });
     });
     $("#root-folder-container").trigger("change");
