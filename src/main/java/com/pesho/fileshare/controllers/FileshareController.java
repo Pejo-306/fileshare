@@ -56,13 +56,26 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/create-sub-folder", method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> createSubFolder(Model model, Long parentFolderId, String folderName) {
+    public Map<String, Boolean> createSubFolder(Long parentFolderId, String folderName) {
         Optional<Folder> parentFolderOpt = folderRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
             Folder parentFolder = parentFolderOpt.get();
             Folder newFolder = new Folder(folderName, parentFolder.getUser(), parentFolder);
             folderRepository.save(newFolder);
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/delete-folder", method = RequestMethod.DELETE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> deleteFolder(Long folderId) {
+        Optional<Folder> folderOpt = folderRepository.findById(folderId);
+
+        if (folderOpt.isPresent()) {
+            folderRepository.delete(folderOpt.get());
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);

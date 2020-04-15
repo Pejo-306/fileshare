@@ -72,6 +72,28 @@ function cancelAddFolderEvent() {
     newFolderFields.remove();
 }
 
+function deleteFolderEvent() {
+    var parentContainer = $(this).parent();
+    var folderName = parentContainer.find("> span.folder-name").text();
+
+    if (confirm(`Are you sure you want to delete folder '${folderName}'`)) {
+        var requestUrl = "/fileshare/delete-folder";
+        var parameters = { folderId: parseInt(parentContainer.attr("folderId")) };
+
+        $.ajax({
+            url: requestUrl,
+            type: "DELETE",
+            data: parameters,
+            success: function(data) {
+                if (data["success"]) {
+                    parentContainer.remove();
+                    alert(`Folder '${folderName}' has been successfully deleted`);
+                }
+            }
+        });
+    }
+}
+
 function requestSubFolders(requestUrl, parentFolderId) {
     var nestedFoldersListId = `nested-folders-of-${parentFolderId}`;
 
@@ -89,7 +111,8 @@ function requestSubFolders(requestUrl, parentFolderId) {
             folderList +=
                 `<li folderId="${id}">\n
                     <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>\n
-                    <span class="folder-name">${name}/</span>\n
+                    <span class="folder-name">${name}</span><span>/</span>\n
+                    <button class="_delete-folder-event-unattached" type="button">Delete</button>
                  </li>\n`;
         });
         folderList += "</ul>\n";
@@ -124,6 +147,10 @@ $(document).ready(function() {
         $("._cancel-add-folder-event-unattached").each(function(index) {
             $(this).click(cancelAddFolderEvent);
             $(this).removeClass("_cancel-add-folder-event-unattached");
+        });
+        $("._delete-folder-event-unattached").each(function(index) {
+            $(this).click(deleteFolderEvent);
+            $(this).removeClass("_delete-folder-event-unattached");
         });
     });
     $("#root-folder-container").trigger("change");
