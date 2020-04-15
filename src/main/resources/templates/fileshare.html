@@ -2,6 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
 <head>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta charset="UTF-8">
     <title>Fileshare</title>
     <script
             src="https://code.jquery.com/jquery-3.4.1.min.js"
@@ -13,7 +16,7 @@
 <body>
 <div id="root-folder-container">
     <div th:folderId="${rootFolder.getId()}">
-        <button class="folder-expand folder-unopened _event-unattached" type="button">+</button>
+        <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>
         <span class="folder-name" th:text="${rootFolder.getName() + ':'}"/>
     </div>
 </div>

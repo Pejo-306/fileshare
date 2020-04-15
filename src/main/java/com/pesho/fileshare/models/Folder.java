@@ -26,6 +26,16 @@ public class Folder {
     @OneToMany(mappedBy = "parent")
     private Set<Folder> nestedFolders;
 
+    public Folder() {
+        super();
+    }
+
+    public Folder(@NotNull String name, User user, Folder parent) {
+        this.name = name;
+        this.user = user;
+        this.parent = parent;
+    }
+
     public Long getId() {
         return id;
     }

@@ -10,25 +10,8 @@ function expandFolder() {
             // just reveal them
             $(`#${nestedFoldersListId}`).show();
         } else {
-            // otherwise, request the nested folders list from the backedn
-            $.get(requestUrl, function(data) {
-                var parentFolder = $("#root-folder-container").find(`[folderId="${folderId}"]`);
-
-                if (!jQuery.isEmptyObject(data)) {
-                    var folderList = `<ul id="${nestedFoldersListId}">\n`;
-                    Object.entries(data).forEach(([id, name]) => {
-                        folderList +=
-                            `<li folderId="${id}">\n
-                                <button class="folder-expand folder-unopened _event-unattached" type="button">+</button>\n
-                                <span class="folder-name">${name}/</span>\n
-                             </li>\n`;
-                    });
-                    folderList += "</ul>\n";
-                    parentFolder.append(folderList);
-
-                    $("#root-folder-container").trigger("change");
-                }
-            });
+            // otherwise, request the nested folders list from the backend
+            requestSubFolders(requestUrl, folderId);
         }
 
         $(this).text("-");
@@ -43,11 +26,104 @@ function expandFolder() {
     }
 }
 
+function newFolderButtonEvent() {
+    var newFolderForm =
+        `<div>
+            <input type="text" name="name" placeholder="New Folder"/>
+            <button class="_add-folder-event-unattached" type="Button">Add</button>
+            <button class="_cancel-add-folder-event-unattached" type="Button">Cancel</button>
+         </div>`;
+
+    // disable 'New Folder' button
+    $(this).prop("disabled", true);
+    $(this).hide();
+
+    $(this).parent().append(newFolderForm);
+
+    $("#root-folder-container").trigger("change");
+}
+
+function addFolderEvent() {
+    var newFolderButton = $(this).parent().parent().find(".new-folder-btn");
+    var newFolderFields = $(this).parent();
+    var requestUrl = "/fileshare/create-sub-folder";
+    var parentFolderId = parseInt($(this).parent().parent().parent().parent().attr("folderId"));
+    var folderName = newFolderFields.find("input:first-child").val();
+    var parameters = { parentFolderId: parentFolderId, folderName: folderName };
+
+    $.post(requestUrl, parameters, function(data) {
+        // reload subfolders from the backed
+        if (data["success"]) {
+            requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + parentFolderId;
+            requestSubFolders(requestUrl, parentFolderId);
+        }
+    });
+}
+
+function cancelAddFolderEvent() {
+    var newFolderButton = $(this).parent().parent().find(".new-folder-btn");
+    var newFolderFields = $(this).parent();
+
+    // enable 'New Folder' button
+    newFolderButton.prop("disabled", false);
+    newFolderButton.show();
+
+    // remove new folder field and buttons
+    newFolderFields.remove();
+}
+
+function requestSubFolders(requestUrl, parentFolderId) {
+    var nestedFoldersListId = `nested-folders-of-${parentFolderId}`;
+
+    $.get(requestUrl, function(data) {
+        var parentFolder = $("#root-folder-container").find(`[folderId="${parentFolderId}"]`);
+
+        var folderList = `<ul id="${nestedFoldersListId}">\n`;
+        // add a button to create a new folder
+        folderList +=
+            `<li>\n
+                <button class="new-folder-btn _new-folder-event-unattached" type="button">New Folder</button>\n
+             </li>\n`;
+        // add the list of sub folders
+        Object.entries(data).forEach(([id, name]) => {
+            folderList +=
+                `<li folderId="${id}">\n
+                    <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>\n
+                    <span class="folder-name">${name}/</span>\n
+                 </li>\n`;
+        });
+        folderList += "</ul>\n";
+        $(`#${nestedFoldersListId}`).remove();
+        parentFolder.append(folderList);
+
+        $("#root-folder-container").trigger("change");
+    });
+}
+
 $(document).ready(function() {
+    // setup CSRF for AJAX POST request
+    var token = $("meta[name='_csrf']").attr("content");
+    var header = $("meta[name='_csrf_header']").attr("content");
+    $(document).ajaxSend(function(e, xhr, options) {
+        xhr.setRequestHeader(header, token);
+    });
+
     $("#root-folder-container").change(function() {
-        $(".folder-expand._event-unattached").each(function(index) {
+        $("._folder-expand-event-unattached").each(function(index) {
             $(this).click(expandFolder);
-            $(this).removeClass("_event-unattached");
+            $(this).removeClass("_folder-expand-event-unattached");
+        });
+        $("._new-folder-event-unattached").each(function(index) {
+            $(this).click(newFolderButtonEvent);
+            $(this).removeClass("_new-folder-event-unattached");
+        });
+        $("._add-folder-event-unattached").each(function(index) {
+            $(this).click(addFolderEvent);
+            $(this).removeClass("_add-folder-event-unattached");
+        });
+        $("._cancel-add-folder-event-unattached").each(function(index) {
+            $(this).click(cancelAddFolderEvent);
+            $(this).removeClass("_cancel-add-folder-event-unattached");
         });
     });
     $("#root-folder-container").trigger("change");

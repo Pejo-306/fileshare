@@ -33,8 +33,6 @@ public class FileshareController {
     public String viewFileshare(Model model, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName());
         Folder rootFolder = user.getRootFolder();
-        Set<Folder> subRootFolders = rootFolder.getNestedFolders();
-        model.addAttribute("subRootFolders", subRootFolders);
         model.addAttribute("rootFolder", rootFolder);
         return "fileshare";
     }
@@ -53,5 +51,20 @@ public class FileshareController {
             }
         }
         return result;
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/create-sub-folder", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> createSubFolder(Model model, Long parentFolderId, String folderName) {
+        Optional<Folder> parentFolderOpt = folderRepository.findById(parentFolderId);
+
+        if (parentFolderOpt.isPresent()) {
+            Folder parentFolder = parentFolderOpt.get();
+            Folder newFolder = new Folder(folderName, parentFolder.getUser(), parentFolder);
+            folderRepository.save(newFolder);
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
     }
 }
