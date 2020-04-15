@@ -3,10 +3,74 @@
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
 <head>
     <title>Fileshare</title>
+    <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous">
+    </script>  <!-- JQuery -->
+    <script type="text/javascript">
+        function expandFolder(folderElement) {
+            var folderId = folderElement.parent().attr("folderId");
+            var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + folderId;
+
+            if (folderElement.hasClass("folder-unopened")) {
+                var nestedFoldersListId = `nested-folders-of-${folderId}`;
+
+                if ($(`#${nestedFoldersListId}`).length) {
+                    // if the nested folders have already been retrieved
+                    // just reveal them
+                    $(`#${nestedFoldersListId}`).show();
+                } else {
+                    // otherwise, request the nested folders list from the backedn
+                    $.get(requestUrl, function(data) {
+                        var parentFolder = $("#folder-list").find(`[folderId="${folderId}"]`);
+
+                        if (!jQuery.isEmptyObject(data)) {
+                            var folderList = `<ul id="${nestedFoldersListId}">\n`;
+                            Object.entries(data).forEach(([id, name]) => {
+                                folderList +=
+                                    `<li folderId="${id}">\n
+                                        <button class="folder-expand folder-unopened _eventUnattached" type="button">+</button>\n
+                                        <span class="folder-name">${name}</span>\n
+                                     </li>\n`;
+                            });
+                            folderList += "</ul>\n";
+                            parentFolder.append(folderList);
+
+                            $("#folder-list").trigger("change");
+                        }
+                    });
+                }
+                folderElement.text("-");
+                folderElement.removeClass("folder-unopened");
+                folderElement.addClass("folder-opened");
+            } else if (folderElement.hasClass("folder-opened")) {
+                $(`#nested-folders-of-${folderId}`).hide();
+                folderElement.text("+");
+                folderElement.removeClass("folder-opened");
+                folderElement.addClass("folder-unopened");
+            }
+        }
+
+        $(document).ready(function() {
+            $("#folder-list").change(function() {
+                $(".folder-expand._eventUnattached").each(function(index) {
+                    $(this).click(function() {
+                        expandFolder($(this));
+                    });
+                    $(this).removeClass("_eventUnattached");
+                });
+            });
+            $("#folder-list").trigger("change");
+        });
+    </script>
 </head>
 <body>
-<ul>
-    <li th:each="folder: ${subRootFolders}" th:text="${folder.getName()}" />
+<ul id="folder-list">
+    <li th:each="folder: ${subRootFolders}" th:folderId="${folder.getId()}">
+        <button class="folder-expand folder-unopened _eventUnattached" type="button">+</button>
+        <span class="folder-name" th:text="${folder.getName()}"/>
+    </li>
 </ul>
 </body>
 </html>
