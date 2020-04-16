@@ -315,6 +315,31 @@ function removeRenameFileFields(buttonElement) {
     renameFileFields.remove();
 }
 
+function deleteFileEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var parentContainer = buttonElement.parent();
+    var fileName = parentContainer.find("> span.file-name").text();
+
+    if (confirm(`Are you sure you want to delete file "${fileName}"`)) {
+        var requestUrl = "/fileshare/delete-file";
+        var parameters = { fileId: parseInt(parentContainer.attr("fileId")) };
+
+        $.ajax({
+            url: requestUrl,
+            type: "DELETE",
+            data: parameters,
+            success: function(data) {
+                if (data["success"]) {
+                    parentContainer.remove();
+                    alert(`File "${fileName}" has been successfully deleted`);
+                } else {
+                    alert("Error: unable to delete file");
+                }
+            }
+        });
+    }
+}
+
 function createNestedFolderList(folderId) {
     var parentFolder = $("#root-folder-container").find(`[folderId="${folderId}"]`);
     var nestedFoldersListId = getNestedFoldersListId(folderId);

@@ -148,4 +148,17 @@ public class FileshareController {
         }
         return Collections.singletonMap("success", false);
     }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/delete-file", method = RequestMethod.DELETE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> deleteFile(Long fileId) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
+
+        if (fileOpt.isPresent()) {
+            fileRepository.delete(fileOpt.get());
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
+    }
 }
