@@ -256,6 +256,65 @@ function cancelPlaceFolderEvent(buttonDOM) {
     window.gCurrentlyMovingFolder = 0;
 }
 
+function renameFileButtonEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var fileName = buttonElement.parent().find("> span.file-name").text();
+    var deleteFileButton = buttonElement.parent().find("> .file-delete-btn");
+    var renameFileForm =
+        `<span>
+            <input type="text" name="name" placeholder="${fileName}"/>
+            <button onclick="confirmRenameFileEvent(this)" type="Button">Confirm</button>
+            <button onclick="cancelRenameFileEvent(this)" type="Button">Cancel</button>
+         </span>`;
+
+    // Disable 'Rename', 'Delete' and 'Move' buttons
+    buttonElement.hide();
+    deleteFileButton.hide();
+
+    buttonElement.after(renameFileForm);
+}
+
+function confirmRenameFileEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var fileContainer = buttonElement.parent().parent();
+    var newFileName = buttonElement.parent().find("input:first-child").val();
+    var fileId = parseInt(fileContainer.attr("fileId"));
+    var requestUrl = "/fileshare/rename-file";
+    var parameters = { fileId: fileId, newFileName: newFileName };
+
+    $.ajax({
+        url: requestUrl,
+        type: "PATCH",
+        data: parameters,
+        success: function(data) {
+            if (data["success"]) {
+                fileContainer.find("> span.file-name").text(newFileName);
+            }
+        }
+    });
+
+    removeRenameFileFields(buttonElement);
+}
+
+function cancelRenameFileEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+
+    removeRenameFileFields(buttonElement);
+}
+
+function removeRenameFileFields(buttonElement) {
+    var renameFileButton = buttonElement.parent().parent().find("> .file-rename-btn");
+    var deleteFileButton = buttonElement.parent().parent().find("> .file-delete-btn");
+    var renameFileFields = buttonElement.parent();
+
+    // enable 'Rename' and 'Delete' buttons
+    renameFileButton.show();
+    deleteFileButton.show();
+
+    // remove rename folder field and buttons
+    renameFileFields.remove();
+}
+
 function createNestedFolderList(folderId) {
     var parentFolder = $("#root-folder-container").find(`[folderId="${folderId}"]`);
     var nestedFoldersListId = getNestedFoldersListId(folderId);
@@ -314,6 +373,8 @@ function requestFiles(folderId) {
             nestedFolderList.append(
                 `<li fileId="${id}">\n
                     <span class="file-name">${name}</span>
+                    <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
+                    <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
                  </li>\n`
             );
         });

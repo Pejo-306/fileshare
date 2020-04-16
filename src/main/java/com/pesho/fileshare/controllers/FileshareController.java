@@ -3,6 +3,7 @@ package com.pesho.fileshare.controllers;
 import com.pesho.fileshare.models.File;
 import com.pesho.fileshare.models.Folder;
 import com.pesho.fileshare.models.User;
+import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.FolderRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.SecurityService;
@@ -26,6 +27,9 @@ public class FileshareController {
 
     @Autowired
     private FolderRepository folderRepository;
+
+    @Autowired
+    private FileRepository fileRepository;
 
     @Autowired
     private SecurityService securityService;
@@ -128,5 +132,20 @@ public class FileshareController {
             }
         }
         return result;
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/rename-file", method = RequestMethod.PATCH,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> renameFile(Long fileId, String newFileName) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
+
+        if (fileOpt.isPresent()) {
+            File file = fileOpt.get();
+            file.setName(newFileName);
+            fileRepository.save(file);
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
     }
 }
