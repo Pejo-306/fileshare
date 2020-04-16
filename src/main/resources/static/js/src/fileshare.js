@@ -1,25 +1,25 @@
 function expandFolder(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var folderId = buttonElement.parent().attr("folderId");
-    var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + folderId;
+    var nestedFolderList = $(`#${getNestedFoldersListId(folderId)}`);
 
     if (buttonElement.hasClass("folder-unopened")) {
-        var nestedFoldersListId = getNestedFoldersListId(folderId);
-
-        if ($(`#${nestedFoldersListId}`).length) {
+        if (nestedFolderList.length) {
             // if the nested folders have already been retrieved
             // just reveal them
-            $(`#${nestedFoldersListId}`).show();
+            nestedFolderList.show();
         } else {
-            // otherwise, request the nested folders list from the backend
-            requestSubFolders(requestUrl, folderId);
+            // otherwise, request all subfolders and files
+            createNestedFolderList(folderId);
+            requestSubFolders(folderId);
+            requestFiles(folderId);
         }
 
         buttonElement.text("-");
         buttonElement.removeClass("folder-unopened");
         buttonElement.addClass("folder-opened");
     } else if (buttonElement.hasClass("folder-opened")) {
-        $(`#nested-folders-of-${folderId}`).hide();
+        nestedFolderList.hide();
 
         buttonElement.text("+");
         buttonElement.removeClass("folder-opened");
@@ -52,10 +52,11 @@ function addFolderEvent(buttonDOM) {
     var parameters = { parentFolderId: parentFolderId, folderName: folderName };
 
     $.post(requestUrl, parameters, function(data) {
-        // reload subfolders from the backed
+        // reload subfolders and files from the backed
         if (data["success"]) {
-            requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + parentFolderId;
-            requestSubFolders(requestUrl, parentFolderId);
+            createNestedFolderList(parentFolderId);
+            requestSubFolders(parentFolderId);
+            requestFiles(parentFolderId);
         }
     });
 }
@@ -255,21 +256,29 @@ function cancelPlaceFolderEvent(buttonDOM) {
     window.gCurrentlyMovingFolder = 0;
 }
 
-function requestSubFolders(requestUrl, parentFolderId) {
-    var nestedFoldersListId = getNestedFoldersListId(parentFolderId);
+function createNestedFolderList(folderId) {
+    var parentFolder = $("#root-folder-container").find(`[folderId="${folderId}"]`);
+    var nestedFoldersListId = getNestedFoldersListId(folderId);
+    var folderList =
+        `<ul id="${nestedFoldersListId}">\n
+            <li>\n
+                <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
+            </li>\n
+        </ul>`;
+
+    $(`#${nestedFoldersListId}`).remove();
+    parentFolder.append(folderList);
+}
+
+function requestSubFolders(parentFolderId) {
+    var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + parentFolderId;
 
     $.get(requestUrl, function(data) {
-        var parentFolder = $("#root-folder-container").find(`[folderId="${parentFolderId}"]`);
+        var nestedFolderList = $(`#${getNestedFoldersListId(parentFolderId)}`);
 
-        var folderList = `<ul id="${nestedFoldersListId}">\n`;
-        // add a button to create a new folder
-        folderList +=
-            `<li>\n
-                <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
-             </li>\n`;
         // add the list of sub folders
         Object.entries(data).forEach(([id, name]) => {
-            folderList +=
+            nestedFolderList.append(
                 `<li folderId="${id}">\n
                     <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
                     <span class="folder-name">${name}/</span>\n
@@ -277,15 +286,13 @@ function requestSubFolders(requestUrl, parentFolderId) {
                     <button onclick="deleteFolderEvent(this)" class="folder-delete-btn" type="button">Delete</button>
                     <button onclick="moveFolderEvent(this)" class="folder-move-btn" type="button">Move</button>
                     <button onclick="placeFolderEvent(this)" class="folder-place-btn" type="button">Place</button>
-                 </li>\n`;
+                 </li>\n`
+            );
         });
-        folderList += "</ul>\n";
-        $(`#${nestedFoldersListId}`).remove();
-        parentFolder.append(folderList);
 
         // Hide/Show 'Move/Place' buttons
-        var moveFolderButtons = $(`#${nestedFoldersListId}`).find(".folder-move-btn");
-        var placeFolderButtons = $(`#${nestedFoldersListId}`).find(".folder-place-btn");
+        var moveFolderButtons = nestedFolderList.find(".folder-move-btn");
+        var placeFolderButtons = nestedFolderList.find(".folder-place-btn");
         if (window.gCurrentlyMovingFolder) {
             moveFolderButtons.hide();
             placeFolderButtons.show();
@@ -293,6 +300,23 @@ function requestSubFolders(requestUrl, parentFolderId) {
             moveFolderButtons.show();
             placeFolderButtons.hide();
         }
+    });
+}
+
+function requestFiles(folderId) {
+    var requestUrl = "/fileshare/get-files?folderId=" + folderId;
+
+    $.get(requestUrl, function(data) {
+        var nestedFolderList = $(`#${getNestedFoldersListId(folderId)}`);
+
+        // add the list of files
+        Object.entries(data).forEach(([id, name]) => {
+            nestedFolderList.append(
+                `<li fileId="${id}">\n
+                    <span class="file-name">${name}</span>
+                 </li>\n`
+            );
+        });
     });
 }
 

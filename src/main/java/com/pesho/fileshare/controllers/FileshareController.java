@@ -1,5 +1,6 @@
 package com.pesho.fileshare.controllers;
 
+import com.pesho.fileshare.models.File;
 import com.pesho.fileshare.models.Folder;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.FolderRepository;
@@ -111,5 +112,21 @@ public class FileshareController {
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/get-files", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<Long, String> getFiles(Model model, @RequestParam("folderId") Long folderId) {
+        Map<Long, String> result = null;
+        Optional<Folder> folder = folderRepository.findById(folderId);
+
+        if (folder.isPresent()) {
+            result = new HashMap<>();
+            for (File file : folder.get().getFiles()) {
+                result.put(file.getId(), file.getName());
+            }
+        }
+        return result;
     }
 }
