@@ -26,6 +26,9 @@ public class Folder {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private Set<Folder> nestedFolders;
 
+    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL)
+    private Set<File> files;
+
     public Folder() {
         super();
     }
@@ -74,5 +77,13 @@ public class Folder {
 
     public void setNestedFolders(Set<Folder> nestedFolders) {
         this.nestedFolders = nestedFolders;
+    }
+
+    public Set<File> getFiles() {
+        return files;
+    }
+
+    public void setFiles(Set<File> files) {
+        this.files = files;
     }
 }
