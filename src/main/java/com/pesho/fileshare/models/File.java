@@ -2,6 +2,7 @@ package com.pesho.fileshare.models;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.Set;
 
 @Entity
 @Table(name = "files")
@@ -12,21 +13,27 @@ public class File {
     private Long id;
 
     @NotNull
+    private FileType fileType;
+
+    @NotNull
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "folder_id", nullable = false)
-    private Folder folder;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Lob
-    @NotNull
     private byte[] content;
 
-    public File() {}
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private File parent;
 
-    public File(@NotNull String name, @NotNull byte[] content) {
-        this.name = name;
-        this.content = content;
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    private Set<File> nestedFiles;
+
+    public File() {
+        super();
     }
 
     public Long getId() {
@@ -37,6 +44,14 @@ public class File {
         this.id = id;
     }
 
+    public FileType getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(FileType fileType) {
+        this.fileType = fileType;
+    }
+
     public String getName() {
         return name;
     }
@@ -45,12 +60,12 @@ public class File {
         this.name = name;
     }
 
-    public Folder getFolder() {
-        return folder;
+    public User getUser() {
+        return user;
     }
 
-    public void setFolder(Folder folder) {
-        this.folder = folder;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public byte[] getContent() {
@@ -59,5 +74,21 @@ public class File {
 
     public void setContent(byte[] content) {
         this.content = content;
+    }
+
+    public File getParent() {
+        return parent;
+    }
+
+    public void setParent(File parent) {
+        this.parent = parent;
+    }
+
+    public Set<File> getNestedFiles() {
+        return nestedFiles;
+    }
+
+    public void setNestedFiles(Set<File> nestedFiles) {
+        this.nestedFiles = nestedFiles;
     }
 }

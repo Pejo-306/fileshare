@@ -1,8 +1,9 @@
 package com.pesho.fileshare.models;
 
+import com.pesho.fileshare.exceptions.FileNotFoundException;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -30,7 +31,7 @@ public class User {
     private boolean enabled;
 
     @OneToMany(mappedBy = "user")
-    private Set<Folder> folders;
+    private Set<File> files;
 
     public Long getId() {
         return id;
@@ -80,20 +81,18 @@ public class User {
         this.enabled = enabled;
     }
 
-    public Set<Folder> getFolders() {
-        return folders;
+    public Set<File> getFiles() {
+        return files;
     }
 
-    public void setFolders(Set<Folder> folders) {
-        this.folders = folders;
+    public void setFiles(Set<File> files) {
+        this.files = files;
     }
 
-    public Folder getRootFolder() {
-        Optional<Folder> rootFolder = folders.stream()
-                .filter(folder -> folder.getParent() == null)
-                .findFirst();
-        if (rootFolder.isPresent())
-            return rootFolder.get();
-        return null;  // should be impossible
+    public File getRootFolder() {
+        return files.stream()
+                .filter(file -> file.getFileType() == FileType.DIRECTORY)  // get only directories
+                .filter(file -> file.getParent() == null)  // root folder has no parent
+                .findFirst().orElseThrow(FileNotFoundException::new);
     }
 }

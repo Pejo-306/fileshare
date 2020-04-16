@@ -1,10 +1,8 @@
 package com.pesho.fileshare.controllers;
 
 import com.pesho.fileshare.models.File;
-import com.pesho.fileshare.models.Folder;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.FileRepository;
-import com.pesho.fileshare.repositories.FolderRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +24,6 @@ public class FileshareController {
     private UserRepository userRepository;
 
     @Autowired
-    private FolderRepository folderRepository;
-
-    @Autowired
     private FileRepository fileRepository;
 
     @Autowired
@@ -37,11 +32,12 @@ public class FileshareController {
     @RequestMapping(value = "/fileshare", method = RequestMethod.GET)
     public String viewFileshare(Model model, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName());
-        Folder rootFolder = user.getRootFolder();
+        File rootFolder = user.getRootFolder();
         model.addAttribute("rootFolder", rootFolder);
         return "fileshare";
     }
 
+    /*
     @ResponseBody
     @RequestMapping(value = "/fileshare/get-sub-folder", method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -118,47 +114,5 @@ public class FileshareController {
         return Collections.singletonMap("success", false);
     }
 
-    @ResponseBody
-    @RequestMapping(value = "/fileshare/get-files", method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<Long, String> getFiles(Model model, @RequestParam("folderId") Long folderId) {
-        Map<Long, String> result = null;
-        Optional<Folder> folder = folderRepository.findById(folderId);
-
-        if (folder.isPresent()) {
-            result = new HashMap<>();
-            for (File file : folder.get().getFiles()) {
-                result.put(file.getId(), file.getName());
-            }
-        }
-        return result;
-    }
-
-    @ResponseBody
-    @RequestMapping(value = "/fileshare/rename-file", method = RequestMethod.PATCH,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> renameFile(Long fileId, String newFileName) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
-
-        if (fileOpt.isPresent()) {
-            File file = fileOpt.get();
-            file.setName(newFileName);
-            fileRepository.save(file);
-            return Collections.singletonMap("success", true);
-        }
-        return Collections.singletonMap("success", false);
-    }
-
-    @ResponseBody
-    @RequestMapping(value = "/fileshare/delete-file", method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> deleteFile(Long fileId) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
-
-        if (fileOpt.isPresent()) {
-            fileRepository.delete(fileOpt.get());
-            return Collections.singletonMap("success", true);
-        }
-        return Collections.singletonMap("success", false);
-    }
+     */
 }
