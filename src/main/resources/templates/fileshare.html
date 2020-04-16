@@ -18,6 +18,7 @@
     <div th:folderId="${rootFolder.getId()}">
         <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>
         <span class="folder-name" th:text="${rootFolder.getName() + ':'}"/>
+        <button class="folder-place-btn _place-folder-event-unattached" type="button" style="display: none;">Place</button>
     </div>
 </div>
 </body>

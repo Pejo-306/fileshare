@@ -95,4 +95,21 @@ public class FileshareController {
         }
         return Collections.singletonMap("success", false);
     }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/move-folder", method = RequestMethod.PATCH,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> moveFolder(Long folderId, Long newParentId) {
+        Optional<Folder> folderOpt = folderRepository.findById(folderId);
+        Optional<Folder> newParentOpt = folderRepository.findById(newParentId);
+
+        if (folderOpt.isPresent() && newParentOpt.isPresent()) {
+            Folder folder = folderOpt.get();
+            Folder newParent = newParentOpt.get();
+            folder.setParent(newParent);
+            folderRepository.save(folder);
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
+    }
 }
