@@ -5,6 +5,7 @@ import com.pesho.fileshare.models.FileType;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
+import com.pesho.fileshare.services.FileStorageService;
 import com.pesho.fileshare.services.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -29,6 +31,9 @@ public class FileshareController {
 
     @Autowired
     private SecurityService securityService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @RequestMapping(value = "/fileshare", method = RequestMethod.GET)
     public String viewFileshare(Model model, Authentication authentication) {
@@ -68,6 +73,20 @@ public class FileshareController {
             File parentFolder = parentFolderOpt.get();
             File newFolder = new File(FileType.DIRECTORY, folderName, parentFolder.getUser(), null, parentFolder);
             fileRepository.save(newFolder);
+            return Collections.singletonMap("success", true);
+        }
+        return Collections.singletonMap("success", false);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/upload-file", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> uploadFile(@RequestParam("file")MultipartFile file, @RequestParam("parentFolderId")Long parentFolderId) {
+        Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
+
+        if (parentFolderOpt.isPresent()) {
+            File parentFolder = parentFolderOpt.get();
+            File newFile = fileStorageService.storeFile(file, parentFolder.getUser(), parentFolder);
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);

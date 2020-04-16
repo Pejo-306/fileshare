@@ -75,6 +75,33 @@ function cancelAddFolderEvent(buttonDOM) {
     newFolderFields.remove();
 }
 
+function uploadFileEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var file = buttonElement.parent().find("> input.file-input").prop("files")[0];
+    var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
+    var requestUrl = "/fileshare/upload-file";
+    var formData = new FormData();
+    formData.append("file", file);
+    formData.append("parentFolderId", parentFolderId)
+
+    $.ajax({
+        url: requestUrl,
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(data) {
+            if (data["success"]) {
+                var nestedFilesList = $(`#${getNestedFilesListId(parentFolderId)}`);
+                nestedFilesList.remove();
+                requestSubFiles(parentFolderId);
+            } else {
+                alert("Error: couldn't upload file")
+            }
+        }
+    });
+}
+
 function renameFolderButtonEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var folderName = buttonElement.parent().find("> span.folder-name").text();
@@ -444,6 +471,12 @@ function requestSubFiles(parentFolderId) {
             `<ul id="${nestedFilesListId}">\n
                 <li>\n
                     <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
+                </li>\n
+                <li>\n
+                    <form method="POST" action="/fileshare/upload-file" enctype="multipart/form-data">\n
+                        <input class="file-input" type="file" name="file"/>\n
+                        <button onclick="uploadFileEvent(this)" class="upload-file-btn" type="button">Upload</button>\n
+                    </form>\n
                 </li>\n
             </ul>`;
         parentFolder.append(folderList);
