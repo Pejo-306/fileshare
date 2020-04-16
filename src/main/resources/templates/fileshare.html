@@ -15,9 +15,9 @@
 </head>
 <body>
 <div id="root-folder-container">
-    <div th:folderId="${rootFolder.getId()}">
+    <div th:fileId="${rootFolder.getId()}">
         <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>
-        <span class="folder-name" th:text="${rootFolder.getName() + ':'}"/>
+        <span class="file-name" th:text="${rootFolder.getName() + ':'}"/>
         <button onclick="placeFolderEvent(this)" class="folder-place-btn" type="button" style="display: none;">Place</button>
     </div>
 </div>

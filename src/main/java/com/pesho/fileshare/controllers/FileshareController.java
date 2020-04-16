@@ -37,23 +37,27 @@ public class FileshareController {
         return "fileshare";
     }
 
-    /*
     @ResponseBody
-    @RequestMapping(value = "/fileshare/get-sub-folder", method = RequestMethod.GET,
+    @RequestMapping(value = "/fileshare/get-sub-files", method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<Long, String> getSubFolder(Model model, @RequestParam("parentFolderId") Long parentFolderId) {
-        Map<Long, String> result = null;
-        Optional<Folder> parentFolder = folderRepository.findById(parentFolderId);
+    public List<Map<String, String>> getSubFiles(Model model, @RequestParam("parentFolderId") Long parentFolderId) {
+        List<Map<String, String>> result = null;
+        Optional<File> parentFolder = fileRepository.findById(parentFolderId);
 
         if (parentFolder.isPresent()) {
-            result = new HashMap<>();
-            for (Folder folder : parentFolder.get().getNestedFolders()) {
-                result.put(folder.getId(), folder.getName());
+            result = new ArrayList<>();
+            for (File file : parentFolder.get().getNestedFiles()) {
+                Map<String, String> triplet = new HashMap<>();
+                triplet.put("id", file.getId().toString());
+                triplet.put("fileType", file.getFileType().toString());
+                triplet.put("name", file.getName());
+                result.add(triplet);
             }
         }
         return result;
     }
 
+    /*
     @ResponseBody
     @RequestMapping(value = "/fileshare/create-sub-folder", method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
