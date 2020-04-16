@@ -28,40 +28,44 @@ function expandFolder(buttonDOM) {
 function newFolderButtonEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var newFolderForm =
-        `<div>
-            <input type="text" name="name" placeholder="New Folder"/>
+        `<span>
+            <input class="new-file-name" type="text" name="name" placeholder="New Folder"/>
             <button onclick="addFolderEvent(this)" type="Button">Add</button>
             <button onclick="cancelAddFolderEvent(this)" type="Button">Cancel</button>
-         </div>`;
+         </span>`;
 
     // disable 'New Folder' button
     buttonElement.hide();
 
-    buttonElement.parent().append(newFolderForm);
+    buttonElement.after(newFolderForm);
 }
 
 function addFolderEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var newFolderButton = buttonElement.parent().parent().find(".new-folder-btn");
+    var newFolderButton = buttonElement.parent().parent().find("> .new-folder-btn");
     var newFolderFields = buttonElement.parent();
+    var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
+    var folderName = newFolderFields.find("input.new-file-name").val();
     var requestUrl = "/fileshare/create-sub-folder";
-    var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("folderId"));
-    var folderName = newFolderFields.find("input:first-child").val();
     var parameters = { parentFolderId: parentFolderId, folderName: folderName };
 
+    console.log(parameters);
+    console.log(folderName);
     $.post(requestUrl, parameters, function(data) {
         // reload subfolders and files from the backed
         if (data["success"]) {
-            createNestedFolderList(parentFolderId);
-            requestSubFolders(parentFolderId);
-            requestFiles(parentFolderId);
+            var nestedFilesList = $(`#${getNestedFilesListId(parentFolderId)}`);
+            nestedFilesList.remove();
+            requestSubFiles(parentFolderId);
+        } else {
+            alert("Error: unable to create new folders")
         }
     });
 }
 
 function cancelAddFolderEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var newFolderButton = buttonElement.parent().parent().find(".new-folder-btn");
+    var newFolderButton = buttonElement.parent().parent().find("> .new-folder-btn");
     var newFolderFields = buttonElement.parent();
 
     // enable 'New Folder' button
@@ -442,11 +446,16 @@ function requestSubFiles(parentFolderId) {
                     <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
                 </li>\n
             </ul>`;
-        $(`#${nestedFilesListId}`).remove();
         parentFolder.append(folderList);
 
         // Fill nested files list with file entries
         var nestedFilesList = $(`#${nestedFilesListId}`);
+        data.sort(function(a, b) {
+            // show directories at the top of the list, then normal files
+            var aValue = a['fileType'] == "FILE" ? 0 : 1;
+            var bValue = b['fileType'] == "FILE" ? 0 : 1;
+            return bValue - aValue;
+        });
         $.each(data, function(index, file) {
             if (file['fileType'] == "DIRECTORY") {  // insert a directory list entry
                 nestedFilesList.append(

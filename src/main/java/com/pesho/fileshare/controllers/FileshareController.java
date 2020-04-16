@@ -1,6 +1,7 @@
 package com.pesho.fileshare.controllers;
 
 import com.pesho.fileshare.models.File;
+import com.pesho.fileshare.models.FileType;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
@@ -57,22 +58,22 @@ public class FileshareController {
         return result;
     }
 
-    /*
     @ResponseBody
     @RequestMapping(value = "/fileshare/create-sub-folder", method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> createSubFolder(Long parentFolderId, String folderName) {
-        Optional<Folder> parentFolderOpt = folderRepository.findById(parentFolderId);
+        Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
-            Folder parentFolder = parentFolderOpt.get();
-            Folder newFolder = new Folder(folderName, parentFolder.getUser(), parentFolder);
-            folderRepository.save(newFolder);
+            File parentFolder = parentFolderOpt.get();
+            File newFolder = new File(FileType.DIRECTORY, folderName, parentFolder.getUser(), null, parentFolder);
+            fileRepository.save(newFolder);
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);
     }
 
+    /*
     @ResponseBody
     @RequestMapping(value = "/fileshare/rename-folder", method = RequestMethod.PATCH,
             produces = MediaType.APPLICATION_JSON_VALUE)

@@ -36,6 +36,14 @@ public class File {
         super();
     }
 
+    public File(@NotNull FileType fileType, @NotNull String name, User user, byte[] content, File parent) {
+        this.fileType = fileType;
+        this.name = name;
+        this.user = user;
+        this.content = content;
+        this.parent = parent;
+    }
+
     public Long getId() {
         return id;
     }
