@@ -1,8 +1,9 @@
-function expandFolder() {
-    var folderId = $(this).parent().attr("folderId");
+function expandFolder(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var folderId = buttonElement.parent().attr("folderId");
     var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + folderId;
 
-    if ($(this).hasClass("folder-unopened")) {
+    if (buttonElement.hasClass("folder-unopened")) {
         var nestedFoldersListId = getNestedFoldersListId(folderId);
 
         if ($(`#${nestedFoldersListId}`).length) {
@@ -14,40 +15,39 @@ function expandFolder() {
             requestSubFolders(requestUrl, folderId);
         }
 
-        $(this).text("-");
-        $(this).removeClass("folder-unopened");
-        $(this).addClass("folder-opened");
-    } else if ($(this).hasClass("folder-opened")) {
+        buttonElement.text("-");
+        buttonElement.removeClass("folder-unopened");
+        buttonElement.addClass("folder-opened");
+    } else if (buttonElement.hasClass("folder-opened")) {
         $(`#nested-folders-of-${folderId}`).hide();
 
-        $(this).text("+");
-        $(this).removeClass("folder-opened");
-        $(this).addClass("folder-unopened");
+        buttonElement.text("+");
+        buttonElement.removeClass("folder-opened");
+        buttonElement.addClass("folder-unopened");
     }
 }
 
-function newFolderButtonEvent() {
+function newFolderButtonEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
     var newFolderForm =
         `<div>
             <input type="text" name="name" placeholder="New Folder"/>
-            <button class="_add-folder-event-unattached" type="Button">Add</button>
-            <button class="_cancel-add-folder-event-unattached" type="Button">Cancel</button>
+            <button onclick="addFolderEvent(this)" type="Button">Add</button>
+            <button onclick="cancelAddFolderEvent(this)" type="Button">Cancel</button>
          </div>`;
 
     // disable 'New Folder' button
-    $(this).prop("disabled", true);
-    $(this).hide();
+    buttonElement.hide();
 
-    $(this).parent().append(newFolderForm);
-
-    $("#root-folder-container").trigger("change");
+    buttonElement.parent().append(newFolderForm);
 }
 
-function addFolderEvent() {
-    var newFolderButton = $(this).parent().parent().find(".new-folder-btn");
-    var newFolderFields = $(this).parent();
+function addFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var newFolderButton = buttonElement.parent().parent().find(".new-folder-btn");
+    var newFolderFields = buttonElement.parent();
     var requestUrl = "/fileshare/create-sub-folder";
-    var parentFolderId = parseInt($(this).parent().parent().parent().parent().attr("folderId"));
+    var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("folderId"));
     var folderName = newFolderFields.find("input:first-child").val();
     var parameters = { parentFolderId: parentFolderId, folderName: folderName };
 
@@ -60,45 +60,46 @@ function addFolderEvent() {
     });
 }
 
-function cancelAddFolderEvent() {
-    var newFolderButton = $(this).parent().parent().find(".new-folder-btn");
-    var newFolderFields = $(this).parent();
+function cancelAddFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var newFolderButton = buttonElement.parent().parent().find(".new-folder-btn");
+    var newFolderFields = buttonElement.parent();
 
     // enable 'New Folder' button
-    newFolderButton.prop("disabled", false);
     newFolderButton.show();
 
     // remove new folder field and buttons
     newFolderFields.remove();
 }
 
-function renameFolderButtonEvent() {
-    var folderName = $(this).parent().find("> span.folder-name").text();
-    var deleteFolderButton = $(this).parent().find("> .folder-delete-btn");
+function renameFolderButtonEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var folderName = buttonElement.parent().find("> span.folder-name").text();
+    var deleteFolderButton = buttonElement.parent().find("> .folder-delete-btn");
+    var moveFolderButton = buttonElement.parent().find("> .folder-move-btn");
     var renameFolderForm =
         `<span>
-            <input type="text" name="name" placeholder="${folderName}"/>
-            <button class="_confirm-rename-folder-event-unattached" type="Button">Confirm</button>
-            <button class="_cancel-rename-folder-event-unattached" type="Button">Cancel</button>
+            <input type="text" name="name" placeholder="${folderName.replace('/', '')}"/>
+            <button onclick="confirmRenameFolderEvent(this)" type="Button">Confirm</button>
+            <button onclick="cancelRenameFolderEvent(this)" type="Button">Cancel</button>
          </span>`;
 
-    // disable and hide 'Rename' and 'Delete' buttons
-    $(this).prop("disabled", true);
-    $(this).hide();
-    deleteFolderButton.prop("disabled", true);
+    // Disable 'Rename', 'Delete' and 'Move' buttons
+    buttonElement.hide();
     deleteFolderButton.hide();
+    moveFolderButton.hide();
 
     deleteFolderButton.before(renameFolderForm);
-
-    $("#root-folder-container").trigger("change");
 }
 
-function confirmRenameFolderEvent() {
-    var folderContainer = $(this).parent().parent();
-    var newFolderName = $(this).parent().find("input:first-child").val();
+function confirmRenameFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var folderContainer = buttonElement.parent().parent();
+    var newFolderName = buttonElement.parent().find("input:first-child").val();
     var folderId = parseInt(folderContainer .attr("folderId"));
     var requestUrl = "/fileshare/rename-folder";
     var parameters = { folderId: folderId, newFolderName: newFolderName };
+    var moveFolderButton = buttonElement.parent().parent().find("> .folder-move-btn");
 
     $.ajax({
         url: requestUrl,
@@ -107,38 +108,46 @@ function confirmRenameFolderEvent() {
         success: function(data) {
             if (data["success"]) {
                 var folderNameContainer = folderContainer.find("> span.folder-name");
-                folderNameContainer.text(newFolderName);
+                folderNameContainer.text(newFolderName + "/");
             }
         }
     });
 
-    removeRenameFolderFields($(this));
+    // Enable 'Move' button
+    moveFolderButton.show();
+
+    removeRenameFolderFields(buttonElement);
 }
 
-function cancelRenameFolderEvent() {
-    removeRenameFolderFields($(this));
+function cancelRenameFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var moveFolderButton = buttonElement.parent().parent().find("> .folder-move-btn");
+
+    // Enable 'Move' button
+    moveFolderButton.show();
+
+    removeRenameFolderFields(buttonElement);
 }
 
 function removeRenameFolderFields(buttonElement) {
-    var renameFolderButton = buttonElement.parent().parent().find(".folder-rename-btn");
+    var renameFolderButton = buttonElement.parent().parent().find("> .folder-rename-btn");
     var deleteFolderButton = buttonElement.parent().parent().find("> .folder-delete-btn");
     var renameFolderFields = buttonElement.parent();
 
     // enable 'Rename' and 'Delete' buttons
-    renameFolderButton.prop("disabled", false);
     renameFolderButton.show();
-    deleteFolderButton.prop("disabled", false);
     deleteFolderButton.show();
 
     // remove rename folder field and buttons
     renameFolderFields.remove();
 }
 
-function deleteFolderEvent() {
-    var parentContainer = $(this).parent();
+function deleteFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var parentContainer = buttonElement.parent();
     var folderName = parentContainer.find("> span.folder-name").text();
 
-    if (confirm(`Are you sure you want to delete folder '${folderName}'`)) {
+    if (confirm(`Are you sure you want to delete folder "${folderName.replace('/', '')}"`)) {
         var requestUrl = "/fileshare/delete-folder";
         var parameters = { folderId: parseInt(parentContainer.attr("folderId")) };
 
@@ -149,34 +158,40 @@ function deleteFolderEvent() {
             success: function(data) {
                 if (data["success"]) {
                     parentContainer.remove();
-                    alert(`Folder '${folderName}' has been successfully deleted`);
+                    alert(`Folder "${folderName.replace('/', '')}" has been successfully deleted`);
+                } else {
+                    alert("Error: unable to delete folder");
                 }
             }
         });
     }
 }
 
-function moveFolderEvent() {
-    var folderId = $(this).parent().attr("folderId");
+function moveFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var folderId = buttonElement.parent().attr("folderId");
     var placeFolderButtons = $(`:not([folderId=${folderId}])`).find("> .folder-place-btn");
     var moveFolderButtons = $(".folder-move-btn");
-    var cancelPlaceFolderButton =
-        `<button class="folder-cancel-place-btn _cancel-place-folder-event-unattached" type="button">Cancel</button>`;
+    var cancelPlaceFolderButton = `<button onclick="cancelPlaceFolderEvent(this)" class="folder-cancel-place-btn" type="button">Cancel</button>`;
+    var renameFolderButtons = $(".folder-rename-btn");
+    var deleteFolderButtons = $(".folder-delete-btn");
 
     // Enable "Place" buttons
     placeFolderButtons.show();
-    // Disable "Move" buttons
+    // Disable "Move", "Delete" and "Rename" buttons
     moveFolderButtons.hide();
+    renameFolderButtons.hide();
+    deleteFolderButtons.hide();
 
     // Add a "Cancel" button to cancel move operation
-    $(this).parent().find("> span.folder-name").after(cancelPlaceFolderButton);
+    buttonElement.parent().find("> span.folder-name").after(cancelPlaceFolderButton);
 
     window.gCurrentlyMovingFolder = folderId;
-    $("#root-folder-container").trigger("change");
 }
 
-function placeFolderEvent() {
-    var folderId = parseInt($(this).parent().attr("folderId"));
+function placeFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var folderId = parseInt(buttonElement.parent().attr("folderId"));
     var nestedFoldersListId = getNestedFoldersListId(folderId);
     var placeFolderButtons = $(".folder-place-btn");
     var moveFolderButtons = $(".folder-move-btn");
@@ -184,6 +199,8 @@ function placeFolderEvent() {
     var movedFolderContainer = $(`[folderId="${window.gCurrentlyMovingFolder}"]`);
     var requestUrl = "/fileshare/move-folder";
     var parameters = { folderId: window.gCurrentlyMovingFolder, newParentId: folderId };
+    var renameFolderButtons = $(".folder-rename-btn");
+    var deleteFolderButtons = $(".folder-delete-btn");
 
     if (confirm("Are you sure you wish to place this folder here?")) {
         $.ajax({
@@ -208,8 +225,10 @@ function placeFolderEvent() {
 
         // Disable "Place" buttons
         placeFolderButtons.hide();
-        // Enable "Move" buttons
+        // Enable "Move", "Rename" and "Delete" buttons
         moveFolderButtons.show();
+        renameFolderButtons.show();
+        deleteFolderButtons.show();
         // Remove "Cancel" place button
         cancelPlaceFolderButton.remove();
 
@@ -217,16 +236,21 @@ function placeFolderEvent() {
     }
 }
 
-function cancelPlaceFolderEvent() {
+function cancelPlaceFolderEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
     var placeFolderButtons = $(".folder-place-btn");
     var moveFolderButtons = $(".folder-move-btn");
+    var renameFolderButtons = $(".folder-rename-btn");
+    var deleteFolderButtons = $(".folder-delete-btn");
 
     // Disable "Place" buttons
     placeFolderButtons.hide();
-    // Enable "Move" buttons
+    // Enable "Move", "Rename" and "Delete" buttons
     moveFolderButtons.show();
+    renameFolderButtons.show();
+    deleteFolderButtons.show();
     // Remove "Cancel" place button
-    $(this).remove();  // self-destruct
+    buttonElement.remove();  // self-destruct
 
     window.gCurrentlyMovingFolder = 0;
 }
@@ -241,18 +265,18 @@ function requestSubFolders(requestUrl, parentFolderId) {
         // add a button to create a new folder
         folderList +=
             `<li>\n
-                <button class="new-folder-btn _new-folder-event-unattached" type="button">New Folder</button>\n
+                <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
              </li>\n`;
         // add the list of sub folders
         Object.entries(data).forEach(([id, name]) => {
             folderList +=
                 `<li folderId="${id}">\n
-                    <button class="folder-expand folder-unopened _folder-expand-event-unattached" type="button">+</button>\n
+                    <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
                     <span class="folder-name">${name}/</span>\n
-                    <button class="folder-rename-btn _rename-folder-event-unattached" type="button">Rename</button>
-                    <button class="folder-delete-btn _delete-folder-event-unattached" type="button">Delete</button>
-                    <button class="folder-move-btn _move-folder-event-unattached" type="button">Move</button>
-                    <button class="folder-place-btn _place-folder-event-unattached" type="button">Place</button>
+                    <button onclick="renameFolderButtonEvent(this)" class="folder-rename-btn" type="button">Rename</button>
+                    <button onclick="deleteFolderEvent(this)" class="folder-delete-btn" type="button">Delete</button>
+                    <button onclick="moveFolderEvent(this)" class="folder-move-btn" type="button">Move</button>
+                    <button onclick="placeFolderEvent(this)" class="folder-place-btn" type="button">Place</button>
                  </li>\n`;
         });
         folderList += "</ul>\n";
@@ -269,8 +293,6 @@ function requestSubFolders(requestUrl, parentFolderId) {
             moveFolderButtons.show();
             placeFolderButtons.hide();
         }
-
-        $("#root-folder-container").trigger("change");
     });
 }
 
@@ -288,27 +310,4 @@ $(document).ready(function() {
     $(document).ajaxSend(function(e, xhr, options) {
         xhr.setRequestHeader(header, token);
     });
-
-    var eventHandlers = {
-         "_folder-expand-event-unattached": expandFolder,
-         "_new-folder-event-unattached": newFolderButtonEvent,
-         "_add-folder-event-unattached": addFolderEvent,
-         "_cancel-add-folder-event-unattached": cancelAddFolderEvent,
-         "_delete-folder-event-unattached": deleteFolderEvent,
-         "_rename-folder-event-unattached": renameFolderButtonEvent,
-         "_confirm-rename-folder-event-unattached": confirmRenameFolderEvent,
-         "_cancel-rename-folder-event-unattached": cancelRenameFolderEvent,
-         "_move-folder-event-unattached": moveFolderEvent,
-         "_place-folder-event-unattached": placeFolderEvent,
-         "_cancel-place-folder-event-unattached": cancelPlaceFolderEvent,
-    };
-    $("#root-folder-container").change(function() {
-        Object.entries(eventHandlers).forEach(([eventClass, handler]) => {
-            $(`.${eventClass}`).each(function(index) {
-                $(this).click(handler);
-                $(this).removeClass(eventClass);
-            });
-        });
-    });
-    $("#root-folder-container").trigger("change");
 });
