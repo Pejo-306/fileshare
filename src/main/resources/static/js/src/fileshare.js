@@ -5,8 +5,7 @@ function expandFolder(buttonDOM) {
 
     if (buttonElement.hasClass("folder-unopened")) {
         if (nestedFilesList.length) {
-            // if the files folders have already been retrieved
-            // just reveal them
+            // if the files and folders have already been retrieved, just reveal them
             nestedFilesList.show();
         } else {
             // otherwise, request all subfiles
@@ -34,24 +33,20 @@ function newFolderButtonEvent(buttonDOM) {
             <button onclick="cancelAddFolderEvent(this)" type="Button">Cancel</button>
          </span>`;
 
-    // disable 'New Folder' button
+    // hide 'New Folder' button
     buttonElement.hide();
-
     buttonElement.after(newFolderForm);
 }
 
 function addFolderEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var newFolderButton = buttonElement.parent().parent().find("> .new-folder-btn");
-    var newFolderFields = buttonElement.parent();
     var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
-    var folderName = newFolderFields.find("input.new-file-name").val();
+    var folderName = buttonElement.parent().find("input.new-file-name").val();
     var requestUrl = "/fileshare/create-sub-folder";
     var parameters = { parentFolderId: parentFolderId, folderName: folderName };
 
     $.post(requestUrl, parameters, function(data) {
-        // reload subfolders and files from the backed
-        if (data["success"]) {
+        if (data["success"]) {  // reload subfolders and files from the backed
             var nestedFilesList = $(`#${getNestedFilesListId(parentFolderId)}`);
             nestedFilesList.remove();
             requestSubFiles(parentFolderId);
@@ -66,9 +61,8 @@ function cancelAddFolderEvent(buttonDOM) {
     var newFolderButton = buttonElement.parent().parent().find("> .new-folder-btn");
     var newFolderFields = buttonElement.parent();
 
-    // enable 'New Folder' button
+    // show "New Folder" button
     newFolderButton.show();
-
     // remove new folder field and buttons
     newFolderFields.remove();
 }
@@ -83,9 +77,9 @@ function uploadFileEvent(buttonDOM) {
         var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
         var requestUrl = "/fileshare/upload-file";
         var formData = new FormData();
+
         formData.append("file", file);
         formData.append("parentFolderId", parentFolderId)
-
         $.ajax({
             url: requestUrl,
             type: "POST",
@@ -109,7 +103,6 @@ function renameFileButtonEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var fileNameContainer = buttonElement.parent().find("> span.file-name");
     var fileName = fileNameContainer.text();
-    var deleteFileButton = buttonElement.parent().find("> .file-delete-btn");
     var renameFileForm =
         `<span>
             <input class="new-file-name" type="text" name="name" placeholder="${fileName.replace('/', '')}"/>
@@ -117,11 +110,9 @@ function renameFileButtonEvent(buttonDOM) {
             <button onclick="cancelRenameFileEvent(this)" type="Button">Cancel</button>
          </span>`;
 
-    // Disable 'Rename', 'Delete' buttons
-    buttonElement.hide();
-    deleteFileButton.hide();
-
+    duringRenameState("");
     fileNameContainer.after(renameFileForm);
+    window.gCurrentlyRenamingFile = true;
 }
 
 function confirmRenameFileEvent(buttonDOM) {
@@ -143,31 +134,58 @@ function confirmRenameFileEvent(buttonDOM) {
                 }
                 fileContainer.find("> span.file-name").text(newFileName);
             } else {
-                alert("Error: unable to ")
+                alert("Error: unable to rename file");
             }
         }
     });
 
-    removeRenameFileFields(buttonElement);
+    nonRenameState("");
+    // remove rename file field and buttons
+    buttonElement.parent().remove();
+    window.gCurrentlyRenamingFile = false;
 }
 
 function cancelRenameFileEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
 
-    removeRenameFileFields(buttonElement);
+    nonRenameState("");
+    // remove rename file field and buttons
+    buttonElement.parent().remove();
+    window.gCurrentlyRenamingFile = false;
 }
 
-function removeRenameFileFields(buttonElement) {
-    var renameFileButton = buttonElement.parent().parent().find("> .file-rename-btn");
-    var deleteFileButton = buttonElement.parent().parent().find("> .file-delete-btn");
-    var renameFileFields = buttonElement.parent();
+function duringRenameState(additionalSelector) {
+    var placeFileButtons = $(`${additionalSelector}.file-place-btn`);
+    var renameFileButtons = $(`${additionalSelector}.file-rename-btn`);
+    var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
+    var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
+    var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
+    var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
 
-    // enable 'Rename' and 'Delete' buttons
-    renameFileButton.show();
-    deleteFileButton.show();
+    // hide "Rename", "Delete", "Move" and "Place" buttons
+    placeFileButtons.hide();
+    renameFileButtons.hide();
+    deleteFileButtons.hide();
+    moveFileButtons.hide();
+    // disable "New Folder" and "Upload File" buttons
+    newFolderButtons.prop("disabled", true);
+    uploadFileButtons.parent().children().prop("disabled", true);
+}
 
-    // remove rename folder field and buttons
-    renameFileFields.remove();
+function nonRenameState(additionalSelector) {
+    var renameFileButtons = $(`${additionalSelector}.file-rename-btn`);
+    var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
+    var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
+    var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
+    var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
+
+    // show "Rename", "Delete" and "Move" buttons
+    renameFileButtons.show();
+    deleteFileButtons.show();
+    moveFileButtons.show();
+    // enable "New Folder" and "Upload File" buttons
+    newFolderButtons.prop("disabled", false);
+    uploadFileButtons.parent().children().prop("disabled", false);
 }
 
 function deleteFileEvent(buttonDOM) {
@@ -187,7 +205,7 @@ function deleteFileEvent(buttonDOM) {
                     buttonElement.parent().remove();
                     alert(`"${fileName}" has been successfully deleted`);
                 } else {
-                    alert("Error: unable to delete folder");
+                    alert("Error: unable to delete file");
                 }
             }
         });
@@ -200,8 +218,8 @@ function moveFileEvent(buttonDOM) {
     var cancelPlaceFileButton = `<button onclick="cancelPlaceFileEvent(this)" class="file-cancel-place-btn" type="button">Cancel</button>`;
 
     window.gCurrentlyMovingFile = fileId;
-    duringMoveState();
-    // Add a "Cancel" button to cancel move operation
+    duringMoveState("");
+    // add a "Cancel" button to cancel move operation
     buttonElement.parent().find("> span.file-name").after(cancelPlaceFileButton);
 }
 
@@ -236,237 +254,62 @@ function placeFileEvent(buttonDOM) {
             }
         });
 
-        nonMoveState();
+        nonMoveState("");
         window.gCurrentlyMovingFile = 0;
     }
 }
 
 function cancelPlaceFileEvent(buttonDOM) {
-    nonMoveState();
+    nonMoveState("");
     window.gCurrentlyMovingFile = 0;
 }
 
-function duringMoveState() {
+function duringMoveState(additionalSelector) {
     var placeFileButtons = $(`:not([fileId=${window.gCurrentlyMovingFile}])`).find("> .file-place-btn");
-    var moveFileButtons = $(".file-move-btn");
-    var renameFileButtons = $(".file-rename-btn");
-    var deleteFileButtons = $(".file-delete-btn");
-    var newFolderButtons = $(".new-folder-btn");
-    var uploadFileButtons = $(".upload-file-btn");
+    var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
+    var renameFileButtons = $(`${additionalSelector}.file-rename-btn`);
+    var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
+    var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
+    var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
 
-    // Enable "Place" buttons
+    // show "Place" buttons
     placeFileButtons.show();
-    // Disable "Move", "Delete" and "Rename" buttons
+    // hide "Move", "Delete" and "Rename" buttons
     moveFileButtons.hide();
     renameFileButtons.hide();
     deleteFileButtons.hide();
+    // disable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", true);
     uploadFileButtons.parent().children().prop("disabled", true);
 }
 
-function nonMoveState() {
-    var placeFileButtons = $(".file-place-btn");
-    var moveFileButtons = $(".file-move-btn");
-    var renameFileButtons = $(".file-rename-btn");
-    var deleteFileButtons = $(".file-delete-btn");
+function nonMoveState(additionalSelector) {
+    var placeFileButtons = $(`${additionalSelector}.file-place-btn`);
+    var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
+    var renameFileButtons = $(`${additionalSelector}.file-rename-btn`);
+    var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
+    var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
+    var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
     var cancelPlaceFileButton = $(".file-cancel-place-btn");
-    var newFolderButtons = $(".new-folder-btn");
-    var uploadFileButtons = $(".upload-file-btn");
 
-    // Disable "Place" buttons
+    // hide "Place" buttons
     placeFileButtons.hide();
-    // Enable "Move", "Rename", "Delete", "New Folder" and "Upload File" buttons
+    // show "Move", "Rename" and "Delete" buttons
     moveFileButtons.show();
     renameFileButtons.show();
     deleteFileButtons.show();
+    // enable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", false);
     uploadFileButtons.parent().children().prop("disabled", false);
     // Remove "Cancel" place button
     cancelPlaceFileButton.remove();
 }
 
-/*
-function renameFileButtonEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var fileName = buttonElement.parent().find("> span.file-name").text();
-    var deleteFileButton = buttonElement.parent().find("> .file-delete-btn");
-    var renameFileForm =
-        `<span>
-            <input type="text" name="name" placeholder="${fileName}"/>
-            <button onclick="confirmRenameFileEvent(this)" type="Button">Confirm</button>
-            <button onclick="cancelRenameFileEvent(this)" type="Button">Cancel</button>
-         </span>`;
-
-    // Disable 'Rename', 'Delete' and 'Move' buttons
-    buttonElement.hide();
-    deleteFileButton.hide();
-
-    buttonElement.after(renameFileForm);
-}
-
-function moveFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var fileId = buttonElement.parent().attr("fileId");
-    var folderId = buttonElement.parent().parent().parent().attr("folderId");
-    var moveButtons = $(".folder-move-btn,.file-move-btn");
-    var renameButtons = $(".folder-rename-btn,.file-rename-btn");
-    var deleteButtons = $(".folder-delete-btn,.file-delete-btn");
-    var placeFileButtons = $(`:not([fileId=${fileId}])`).find("> .file-place-btn");
-    var placeFolderButtons = $(".folder-place-btn")
-    var cancelPlaceFileButton = `<button onclick="cancelPlaceFileEvent(this)" class="file-cancel-place-btn" type="button">Cancel</button>`;
-
-    // Enable "Place" buttons
-    placeFileButtons.show();
-    // Disable "Move", "Delete" and "Rename" buttons, as well as folder "Place" buttons
-    moveButtons.hide();
-    renameButtons.hide();
-    deleteButtons.hide();
-    placeFolderButtons.hide();
-
-    // Add a "Cancel" button to cancel move operation
-    buttonElement.parent().find("> span.file-name").after(cancelPlaceFileButton);
-
-    window.gCurrentlyMovingFile = fileId;
-}
-
-function placeFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var fileId = parseInt(buttonElement.parent().attr("fileId"));
-    var nestedFilesListId = getNestedFilesListId(fileId);
-    var placeFileButtons = $(".file-place-btn");
-    var moveFileButtons = $(".file-move-btn");
-    var cancelPlaceFileButton = $(".file-cancel-place-btn");
-    var movedFileContainer = $(`[fileId="${window.gCurrentlyMovingFile}"]`);
-    var requestUrl = "/fileshare/move-file";
-    var parameters = { fileId: window.gCurrentlyMovingFile, newParentId: fileId };
-    var renameFileButtons = $(".file-rename-btn");
-    var deleteFileButtons = $(".file-delete-btn");
-
-    if (confirm("Are you sure you wish to place this file here?")) {
-        $.ajax({
-            url: requestUrl,
-            type: "PATCH",
-            data: parameters,
-            success: function(data) {
-                if (data["success"]) {
-                    if ($(`#${nestedFilesListId}`).length) {
-                        // if the nested files have already been retrieved
-                        // move the moved file's container to the nested files' container
-                        movedFileContainer.appendTo(`#${nestedFilesListId}`);
-                    } else {
-                        // otherwise, delete the moved file's container
-                        movedFileContainer.remove();
-                    }
-                } else {
-                    alert("Error: unable to move file");
-                }
-            }
-        });
-
-        // Disable "Place" buttons
-        placeFileButtons.hide();
-        // Enable "Move", "Rename" and "Delete" buttons
-        moveFileButtons.show();
-        renameFileButtons.show();
-        deleteFileButtons.show();
-        // Remove "Cancel" place button
-        cancelPlaceFileButton.remove();
-
-        window.gCurrentlyMovingFile = 0;
-    }
-}
-
-function cancelPlaceFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var moveButtons = $(".folder-move-btn,.file-move-btn");
-    var renameButtons = $(".folder-rename-btn,.file-rename-btn");
-    var deleteButtons = $(".folder-delete-btn,.file-delete-btn");
-    var placeButtons = $(".folder-place-btn,.file-place-btn");
-
-    // Disable "Place" buttons
-    placeButtons.hide();
-    // Enable "Move", "Rename" and "Delete" buttons
-    moveButtons.show();
-    renameButtons.show();
-    deleteButtons.show();
-    // Remove "Cancel" place button
-    buttonElement.remove();  // self-destruct
-
-    window.gCurrentlyMovingFile = 0;
-}
-
-function confirmRenameFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var fileContainer = buttonElement.parent().parent();
-    var newFileName = buttonElement.parent().find("input:first-child").val();
-    var fileId = parseInt(fileContainer.attr("fileId"));
-    var requestUrl = "/fileshare/rename-file";
-    var parameters = { fileId: fileId, newFileName: newFileName };
-
-    $.ajax({
-        url: requestUrl,
-        type: "PATCH",
-        data: parameters,
-        success: function(data) {
-            if (data["success"]) {
-                fileContainer.find("> span.file-name").text(newFileName);
-            }
-        }
-    });
-
-    removeRenameFileFields(buttonElement);
-}
-
-function cancelRenameFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-
-    removeRenameFileFields(buttonElement);
-}
-
-function removeRenameFileFields(buttonElement) {
-    var renameFileButton = buttonElement.parent().parent().find("> .file-rename-btn");
-    var deleteFileButton = buttonElement.parent().parent().find("> .file-delete-btn");
-    var renameFileFields = buttonElement.parent();
-
-    // enable 'Rename' and 'Delete' buttons
-    renameFileButton.show();
-    deleteFileButton.show();
-
-    // remove rename folder field and buttons
-    renameFileFields.remove();
-}
-
-function deleteFileEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var parentContainer = buttonElement.parent();
-    var fileName = parentContainer.find("> span.file-name").text();
-
-    if (confirm(`Are you sure you want to delete file "${fileName}"`)) {
-        var requestUrl = "/fileshare/delete-file";
-        var parameters = { fileId: parseInt(parentContainer.attr("fileId")) };
-
-        $.ajax({
-            url: requestUrl,
-            type: "DELETE",
-            data: parameters,
-            success: function(data) {
-                if (data["success"]) {
-                    parentContainer.remove();
-                    alert(`File "${fileName}" has been successfully deleted`);
-                } else {
-                    alert("Error: unable to delete file");
-                }
-            }
-        });
-    }
-}
-*/
-
 function requestSubFiles(parentFolderId) {
     var requestUrl = "/fileshare/get-sub-files?parentFolderId=" + parentFolderId;
 
     $.get(requestUrl, function(data) {
-        // Add nested files list
+        // add nested files list
         var parentFolder = $("#root-folder-container").find(`[fileId="${parentFolderId}"]`);
         var nestedFilesListId = getNestedFilesListId(parentFolderId);
         var folderList =
@@ -483,10 +326,10 @@ function requestSubFiles(parentFolderId) {
             </ul>`;
         parentFolder.append(folderList);
 
-        // Fill nested files list with file entries
-        var nestedFilesList = $(`#${nestedFilesListId}`);
-
         if (!jQuery.isEmptyObject(data)) {
+            // fill nested files list with file entries
+            var nestedFilesList = $(`#${nestedFilesListId}`);
+
             data.sort(function(a, b) {
                 // show directories at the top of the list, then normal files
                 var aValue = a['fileType'] == "FILE" ? 0 : 1;
@@ -519,9 +362,11 @@ function requestSubFiles(parentFolderId) {
         }
 
         if (window.gCurrentlyMovingFile) {
-            duringMoveState();
+            duringMoveState(`#${nestedFilesListId} `);
+        } else if (window.gCurrentlyRenamingFile) {
+            duringRenameState(`#${nestedFilesListId} `);
         } else {
-            nonMoveState();
+            normalState(`#${nestedFilesListId} `);
         }
     });
 }
@@ -530,86 +375,29 @@ function getNestedFilesListId(folderId) {
     return `nested-files-of-${folderId}`;
 }
 
-/*
-function createNestedFolderList(folderId) {
-    var parentFolder = $("#root-folder-container").find(`[folderId="${folderId}"]`);
-    var nestedFoldersListId = getNestedFoldersListId(folderId);
-    var folderList =
-        `<ul id="${nestedFoldersListId}">\n
-            <li>\n
-                <button onclick="newFolderButtonEvent(this)" class="new-folder-btn" type="button">New Folder</button>\n
-            </li>\n
-        </ul>`;
+function normalState(additionalSelector) {
+    var placeFileButtons = $(`${additionalSelector}.file-place-btn`);
+    var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
+    var renameFileButtons = $(`${additionalSelector}.file-rename-btn`);
+    var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
+    var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
+    var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
 
-    $(`#${nestedFoldersListId}`).remove();
-    parentFolder.append(folderList);
+    // hide "Place" buttons
+    placeFileButtons.hide();
+    // show "Move", "Rename" and "Delete" buttons
+    moveFileButtons.show();
+    renameFileButtons.show();
+    deleteFileButtons.show();
+    // enable "New Folder" and "Upload File" buttons
+    newFolderButtons.prop("disabled", false);
+    uploadFileButtons.parent().children().prop("disabled", false);
 }
-
-function requestSubFolders(parentFolderId) {
-    var requestUrl = "/fileshare/get-sub-folder?parentFolderId=" + parentFolderId;
-
-    $.get(requestUrl, function(data) {
-        var nestedFolderList = $(`#${getNestedFoldersListId(parentFolderId)}`);
-
-        // add the list of sub folders
-        Object.entries(data).forEach(([id, name]) => {
-            nestedFolderList.append(
-                `<li folderId="${id}">\n
-                    <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
-                    <span class="folder-name">${name}/</span>\n
-                    <button onclick="renameFolderButtonEvent(this)" class="folder-rename-btn" type="button">Rename</button>
-                    <button onclick="deleteFolderEvent(this)" class="folder-delete-btn" type="button">Delete</button>
-                    <button onclick="moveFolderEvent(this)" class="folder-move-btn" type="button">Move</button>
-                    <button onclick="placeFolderEvent(this)" class="folder-place-btn" type="button">Place</button>
-                 </li>\n`
-            );
-        });
-
-        // Hide/Show buttons
-        var moveFolderButtons = nestedFolderList.find(".folder-move-btn");
-        var placeFolderButtons = nestedFolderList.find(".folder-place-btn");
-        var renameFolderButtons = nestedFolderList.find(".folder-rename-btn");
-        var deleteFolderButtons = nestedFolderList.find(".folder-delete-btn");
-        if (window.gCurrentlyMovingFile) {
-            moveFolderButtons.hide();
-            renameFolderButtons.hide();
-            deleteFolderButtons.hide();
-
-            placeFolderButtons.show();
-        } else {
-            moveFolderButtons.show();
-            renameFolderButtons.show();
-            deleteFolderButtons.show();
-
-            placeFolderButtons.hide();
-        }
-    });
-}
-
-function requestFiles(folderId) {
-    var requestUrl = "/fileshare/get-files?folderId=" + folderId;
-
-    $.get(requestUrl, function(data) {
-        var nestedFolderList = $(`#${getNestedFoldersListId(folderId)}`);
-
-        // add the list of files
-        Object.entries(data).forEach(([id, name]) => {
-            nestedFolderList.append(
-                `<li fileId="${id}">\n
-                    <span class="file-name">${name}</span>
-                    <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
-                    <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
-                    <button onclick="moveFileEvent(this)" class="file-move-btn" type="button">Move</button>
-                 </li>\n`
-            );
-        });
-    });
-}
-*/
 
 $(document).ready(function() {
-    // Global variables
+    // global variables
     window.gCurrentlyMovingFile = 0;
+    window.gCurrentlyRenamingFile = false;
 
     // setup CSRF for AJAX POST request
     var token = $("meta[name='_csrf']").attr("content");
