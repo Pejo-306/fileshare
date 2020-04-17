@@ -194,55 +194,41 @@ function deleteFileEvent(buttonDOM) {
     }
 }
 
-function moveFolderEvent(buttonDOM) {
+function moveFileEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var folderId = buttonElement.parent().attr("folderId");
-    var placeFolderButtons = $(`:not([folderId=${folderId}])`).find("> .folder-place-btn");
-    var moveFolderButtons = $(".folder-move-btn");
-    var cancelPlaceFolderButton = `<button onclick="cancelPlaceFolderEvent(this)" class="folder-cancel-place-btn" type="button">Cancel</button>`;
-    var renameFolderButtons = $(".folder-rename-btn");
-    var deleteFolderButtons = $(".folder-delete-btn");
+    var fileId = buttonElement.parent().attr("fileId");
+    var cancelPlaceFileButton = `<button onclick="cancelPlaceFileEvent(this)" class="file-cancel-place-btn" type="button">Cancel</button>`;
 
-    // Enable "Place" buttons
-    placeFolderButtons.show();
-    // Disable "Move", "Delete" and "Rename" buttons
-    moveFolderButtons.hide();
-    renameFolderButtons.hide();
-    deleteFolderButtons.hide();
-
+    window.gCurrentlyMovingFile = fileId;
+    duringMoveState();
     // Add a "Cancel" button to cancel move operation
-    buttonElement.parent().find("> span.folder-name").after(cancelPlaceFolderButton);
-
-    window.gCurrentlyMovingFolder = folderId;
+    buttonElement.parent().find("> span.file-name").after(cancelPlaceFileButton);
 }
 
-function placeFolderEvent(buttonDOM) {
+function placeFileEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var folderId = parseInt(buttonElement.parent().attr("folderId"));
-    var nestedFoldersListId = getNestedFoldersListId(folderId);
-    var placeFolderButtons = $(".folder-place-btn");
-    var moveFolderButtons = $(".folder-move-btn");
-    var cancelPlaceFolderButton = $(".folder-cancel-place-btn");
-    var movedFolderContainer = $(`[folderId="${window.gCurrentlyMovingFolder}"]`);
-    var requestUrl = "/fileshare/move-folder";
-    var parameters = { folderId: window.gCurrentlyMovingFolder, newParentId: folderId };
-    var renameFolderButtons = $(".folder-rename-btn");
-    var deleteFolderButtons = $(".folder-delete-btn");
+    var newParentId = parseInt(buttonElement.parent().attr("fileId"));
+    var requestUrl = "/fileshare/move-file";
+    var parameters = { fileId: window.gCurrentlyMovingFile, newParentId: newParentId };
 
-    if (confirm("Are you sure you wish to place this folder here?")) {
+    if (confirm("Are you sure you wish to place this file here?")) {
+        var movedFileContainer = $(`[fileId="${window.gCurrentlyMovingFile}"]`);
+
         $.ajax({
             url: requestUrl,
             type: "PATCH",
             data: parameters,
             success: function(data) {
+                var nestedFilesList = $(`#${getNestedFilesListId(newParentId)}`);
+
                 if (data["success"]) {
-                    if ($(`#${nestedFoldersListId}`).length) {
-                        // if the nested folders have already been retrieved
-                        // move the moved folder's container to the nested folders' container
-                        movedFolderContainer.appendTo(`#${nestedFoldersListId}`);
+                    if (nestedFilesList.length) {
+                        // if the nested files have already been retrieved
+                        // move the moved file's container to the nested files' container
+                        movedFileContainer.appendTo(nestedFilesList);
                     } else {
-                        // otherwise, delete the moved folder's container
-                        movedFolderContainer.remove();
+                        // otherwise, delete the moved file's container
+                        movedFileContainer.remove();
                     }
                 } else {
                     alert("Error: unable to move folder");
@@ -250,36 +236,53 @@ function placeFolderEvent(buttonDOM) {
             }
         });
 
-        // Disable "Place" buttons
-        placeFolderButtons.hide();
-        // Enable "Move", "Rename" and "Delete" buttons
-        moveFolderButtons.show();
-        renameFolderButtons.show();
-        deleteFolderButtons.show();
-        // Remove "Cancel" place button
-        cancelPlaceFolderButton.remove();
-
-        window.gCurrentlyMovingFolder = 0;
+        nonMoveState();
+        window.gCurrentlyMovingFile = 0;
     }
 }
 
-function cancelPlaceFolderEvent(buttonDOM) {
-    var buttonElement = $(buttonDOM);
-    var placeFolderButtons = $(".folder-place-btn");
-    var moveFolderButtons = $(".folder-move-btn");
-    var renameFolderButtons = $(".folder-rename-btn");
-    var deleteFolderButtons = $(".folder-delete-btn");
+function cancelPlaceFileEvent(buttonDOM) {
+    nonMoveState();
+    window.gCurrentlyMovingFile = 0;
+}
+
+function duringMoveState() {
+    var placeFileButtons = $(`:not([fileId=${window.gCurrentlyMovingFile}])`).find("> .file-place-btn");
+    var moveFileButtons = $(".file-move-btn");
+    var renameFileButtons = $(".file-rename-btn");
+    var deleteFileButtons = $(".file-delete-btn");
+    var newFolderButtons = $(".new-folder-btn");
+    var uploadFileButtons = $(".upload-file-btn");
+
+    // Enable "Place" buttons
+    placeFileButtons.show();
+    // Disable "Move", "Delete" and "Rename" buttons
+    moveFileButtons.hide();
+    renameFileButtons.hide();
+    deleteFileButtons.hide();
+    newFolderButtons.prop("disabled", true);
+    uploadFileButtons.parent().children().prop("disabled", true);
+}
+
+function nonMoveState() {
+    var placeFileButtons = $(".file-place-btn");
+    var moveFileButtons = $(".file-move-btn");
+    var renameFileButtons = $(".file-rename-btn");
+    var deleteFileButtons = $(".file-delete-btn");
+    var cancelPlaceFileButton = $(".file-cancel-place-btn");
+    var newFolderButtons = $(".new-folder-btn");
+    var uploadFileButtons = $(".upload-file-btn");
 
     // Disable "Place" buttons
-    placeFolderButtons.hide();
-    // Enable "Move", "Rename" and "Delete" buttons
-    moveFolderButtons.show();
-    renameFolderButtons.show();
-    deleteFolderButtons.show();
+    placeFileButtons.hide();
+    // Enable "Move", "Rename", "Delete", "New Folder" and "Upload File" buttons
+    moveFileButtons.show();
+    renameFileButtons.show();
+    deleteFileButtons.show();
+    newFolderButtons.prop("disabled", false);
+    uploadFileButtons.parent().children().prop("disabled", false);
     // Remove "Cancel" place button
-    buttonElement.remove();  // self-destruct
-
-    window.gCurrentlyMovingFolder = 0;
+    cancelPlaceFileButton.remove();
 }
 
 /*
@@ -323,7 +326,7 @@ function moveFileEvent(buttonDOM) {
     // Add a "Cancel" button to cancel move operation
     buttonElement.parent().find("> span.file-name").after(cancelPlaceFileButton);
 
-    window.gCurrentlyMovingFolder = fileId;
+    window.gCurrentlyMovingFile = fileId;
 }
 
 function placeFileEvent(buttonDOM) {
@@ -389,7 +392,7 @@ function cancelPlaceFileEvent(buttonDOM) {
     // Remove "Cancel" place button
     buttonElement.remove();  // self-destruct
 
-    window.gCurrentlyMovingFolder = 0;
+    window.gCurrentlyMovingFile = 0;
 }
 
 function confirmRenameFileEvent(buttonDOM) {
@@ -482,32 +485,44 @@ function requestSubFiles(parentFolderId) {
 
         // Fill nested files list with file entries
         var nestedFilesList = $(`#${nestedFilesListId}`);
-        data.sort(function(a, b) {
-            // show directories at the top of the list, then normal files
-            var aValue = a['fileType'] == "FILE" ? 0 : 1;
-            var bValue = b['fileType'] == "FILE" ? 0 : 1;
-            return bValue - aValue;
-        });
-        $.each(data, function(index, file) {
-            if (file['fileType'] == "DIRECTORY") {  // insert a directory list entry
-                nestedFilesList.append(
-                    `<li fileId="${file['id']}" fileType="D">\n
-                        <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
-                        <span class="file-name">${file['name']}/</span>\n
-                        <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
-                        <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
-                     </li>\n`
-                );
-            } else if (file['fileType'] == "FILE") {  // insert a file list entry
-                nestedFilesList.append(
-                    `<li fileId="${file['id']}" fileType="F">\n
-                        <span class="file-name">${file['name']}</span>\n
-                        <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
-                        <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
-                     </li>\n`
-                );
-            }
-        });
+
+        if (!jQuery.isEmptyObject(data)) {
+            data.sort(function(a, b) {
+                // show directories at the top of the list, then normal files
+                var aValue = a['fileType'] == "FILE" ? 0 : 1;
+                var bValue = b['fileType'] == "FILE" ? 0 : 1;
+                return bValue - aValue;
+            });
+            $.each(data, function(index, file) {
+                if (file['fileType'] == "DIRECTORY") {  // insert a directory list entry
+                    nestedFilesList.append(
+                        `<li fileId="${file['id']}" fileType="D">\n
+                            <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
+                            <span class="file-name">${file['name']}/</span>\n
+                            <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
+                            <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
+                            <button onclick="moveFileEvent(this)" class="file-move-btn" type="button">Move</button>
+                            <button onclick="placeFileEvent(this)" class="file-place-btn" type="button">Place</button>
+                         </li>\n`
+                    );
+                } else if (file['fileType'] == "FILE") {  // insert a file list entry
+                    nestedFilesList.append(
+                        `<li fileId="${file['id']}" fileType="F">\n
+                            <span class="file-name">${file['name']}</span>\n
+                            <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
+                            <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
+                            <button onclick="moveFileEvent(this)" class="file-move-btn" type="button">Move</button>
+                         </li>\n`
+                    );
+                }
+            });
+        }
+
+        if (window.gCurrentlyMovingFile) {
+            duringMoveState();
+        } else {
+            nonMoveState();
+        }
     });
 }
 
@@ -555,7 +570,7 @@ function requestSubFolders(parentFolderId) {
         var placeFolderButtons = nestedFolderList.find(".folder-place-btn");
         var renameFolderButtons = nestedFolderList.find(".folder-rename-btn");
         var deleteFolderButtons = nestedFolderList.find(".folder-delete-btn");
-        if (window.gCurrentlyMovingFolder) {
+        if (window.gCurrentlyMovingFile) {
             moveFolderButtons.hide();
             renameFolderButtons.hide();
             deleteFolderButtons.hide();
@@ -594,7 +609,7 @@ function requestFiles(folderId) {
 
 $(document).ready(function() {
     // Global variables
-    window.gCurrentlyMovingFolder = 0;
+    window.gCurrentlyMovingFile = 0;
 
     // setup CSRF for AJAX POST request
     var token = $("meta[name='_csrf']").attr("content");

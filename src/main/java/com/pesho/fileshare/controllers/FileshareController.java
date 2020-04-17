@@ -73,6 +73,7 @@ public class FileshareController {
         if (parentFolderOpt.isPresent()) {
             File parentFolder = parentFolderOpt.get();
             File newFolder = new File(FileType.DIRECTORY, folderName, parentFolder.getUser(), null, parentFolder);
+
             fileRepository.save(newFolder);
             return Collections.singletonMap("success", true);
         }
@@ -89,6 +90,7 @@ public class FileshareController {
         if (parentFolderOpt.isPresent()) {
             File parentFolder = parentFolderOpt.get();
             File newFile = fileStorageService.storeFile(file, parentFolder.getUser(), parentFolder);
+
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);
@@ -103,6 +105,7 @@ public class FileshareController {
 
         if (fileOpt.isPresent()) {
             File file = fileOpt.get();
+
             file.setName(newFileName);
             fileRepository.save(file);
             return Collections.singletonMap("success", true);
@@ -123,23 +126,25 @@ public class FileshareController {
         return Collections.singletonMap("success", false);
     }
 
-    /*
     @ResponseBody
-    @RequestMapping(value = "/fileshare/move-folder", method = RequestMethod.PATCH,
+    @RequestMapping(value = "/fileshare/move-file", method = RequestMethod.PATCH,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> moveFolder(Long folderId, Long newParentId) {
-        Optional<Folder> folderOpt = folderRepository.findById(folderId);
-        Optional<Folder> newParentOpt = folderRepository.findById(newParentId);
+    public Map<String, Boolean> moveFile(@RequestParam("fileId") Long fileId,
+                                         @RequestParam("newParentId") Long newParentId) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
+        Optional<File> newParentOpt = fileRepository.findById(newParentId);
 
-        if (folderOpt.isPresent() && newParentOpt.isPresent()) {
-            Folder folder = folderOpt.get();
-            Folder newParent = newParentOpt.get();
-            folder.setParent(newParent);
-            folderRepository.save(folder);
-            return Collections.singletonMap("success", true);
+        if (fileOpt.isPresent() && newParentOpt.isPresent()) {
+            File file = fileOpt.get();
+            File newParent = newParentOpt.get();
+
+            if (newParent.getFileType() == FileType.DIRECTORY) {  // allow movement only to folders
+                file.setParent(newParent);
+                fileRepository.save(file);
+                return Collections.singletonMap("success", true);
+            }
+            return Collections.singletonMap("success", false);
         }
         return Collections.singletonMap("success", false);
     }
-
-     */
 }
