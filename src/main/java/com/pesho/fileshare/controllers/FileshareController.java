@@ -46,7 +46,7 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/get-sub-files", method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<Map<String, String>> getSubFiles(Model model, @RequestParam("parentFolderId") Long parentFolderId) {
+    public List<Map<String, String>> getSubFiles(@RequestParam("parentFolderId") Long parentFolderId) {
         List<Map<String, String>> result = null;
         Optional<File> parentFolder = fileRepository.findById(parentFolderId);
 
@@ -66,7 +66,8 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/create-sub-folder", method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> createSubFolder(Long parentFolderId, String folderName) {
+    public Map<String, Boolean> createSubFolder(@RequestParam("parentFolderId") Long parentFolderId,
+                                                @RequestParam("folderName") String folderName) {
         Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
@@ -81,7 +82,8 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/upload-file", method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> uploadFile(@RequestParam("file")MultipartFile file, @RequestParam("parentFolderId")Long parentFolderId) {
+    public Map<String, Boolean> uploadFile(@RequestParam("file") MultipartFile file,
+                                           @RequestParam("parentFolderId") Long parentFolderId) {
         Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
@@ -107,20 +109,22 @@ public class FileshareController {
         }
         return Collections.singletonMap("success", false);
     }
+    */
 
     @ResponseBody
-    @RequestMapping(value = "/fileshare/delete-folder", method = RequestMethod.DELETE,
+    @RequestMapping(value = "/fileshare/delete-file", method = RequestMethod.DELETE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> deleteFolder(Long folderId) {
-        Optional<Folder> folderOpt = folderRepository.findById(folderId);
+    public Map<String, Boolean> deleteFile(@RequestParam("fileId") Long fileId) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
 
-        if (folderOpt.isPresent()) {
-            folderRepository.delete(folderOpt.get());
+        if (fileOpt.isPresent()) {
+            fileRepository.delete(fileOpt.get());
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);
     }
 
+    /*
     @ResponseBody
     @RequestMapping(value = "/fileshare/move-folder", method = RequestMethod.PATCH,
             produces = MediaType.APPLICATION_JSON_VALUE)

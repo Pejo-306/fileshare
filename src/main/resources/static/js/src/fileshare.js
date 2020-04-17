@@ -49,8 +49,6 @@ function addFolderEvent(buttonDOM) {
     var requestUrl = "/fileshare/create-sub-folder";
     var parameters = { parentFolderId: parentFolderId, folderName: folderName };
 
-    console.log(parameters);
-    console.log(folderName);
     $.post(requestUrl, parameters, function(data) {
         // reload subfolders and files from the backed
         if (data["success"]) {
@@ -78,28 +76,33 @@ function cancelAddFolderEvent(buttonDOM) {
 function uploadFileEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var file = buttonElement.parent().find("> input.file-input").prop("files")[0];
-    var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
-    var requestUrl = "/fileshare/upload-file";
-    var formData = new FormData();
-    formData.append("file", file);
-    formData.append("parentFolderId", parentFolderId)
 
-    $.ajax({
-        url: requestUrl,
-        type: "POST",
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function(data) {
-            if (data["success"]) {
-                var nestedFilesList = $(`#${getNestedFilesListId(parentFolderId)}`);
-                nestedFilesList.remove();
-                requestSubFiles(parentFolderId);
-            } else {
-                alert("Error: couldn't upload file")
+    if (file == undefined) {
+        alert("Please choose a file before attempting to upload");
+    } else {
+        var parentFolderId = parseInt(buttonElement.parent().parent().parent().parent().attr("fileId"));
+        var requestUrl = "/fileshare/upload-file";
+        var formData = new FormData();
+        formData.append("file", file);
+        formData.append("parentFolderId", parentFolderId)
+
+        $.ajax({
+            url: requestUrl,
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(data) {
+                if (data["success"]) {
+                    var nestedFilesList = $(`#${getNestedFilesListId(parentFolderId)}`);
+                    nestedFilesList.remove();
+                    requestSubFiles(parentFolderId);
+                } else {
+                    alert("Error: couldn't upload file")
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 function renameFolderButtonEvent(buttonDOM) {
@@ -172,14 +175,13 @@ function removeRenameFolderFields(buttonElement) {
     renameFolderFields.remove();
 }
 
-function deleteFolderEvent(buttonDOM) {
+function deleteFileEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var parentContainer = buttonElement.parent();
-    var folderName = parentContainer.find("> span.folder-name").text();
+    var fileName = buttonElement.parent().find("> span.file-name").text();
 
-    if (confirm(`Are you sure you want to delete folder "${folderName.replace('/', '')}"`)) {
-        var requestUrl = "/fileshare/delete-folder";
-        var parameters = { folderId: parseInt(parentContainer.attr("folderId")) };
+    if (confirm(`Are you sure you want to delete "${fileName}"`)) {
+        var requestUrl = "/fileshare/delete-file";
+        var parameters = { fileId: parseInt(buttonElement.parent().attr("fileId")) };
 
         $.ajax({
             url: requestUrl,
@@ -187,8 +189,8 @@ function deleteFolderEvent(buttonDOM) {
             data: parameters,
             success: function(data) {
                 if (data["success"]) {
-                    parentContainer.remove();
-                    alert(`Folder "${folderName.replace('/', '')}" has been successfully deleted`);
+                    buttonElement.parent().remove();
+                    alert(`"${fileName}" has been successfully deleted`);
                 } else {
                     alert("Error: unable to delete folder");
                 }
@@ -285,6 +287,7 @@ function cancelPlaceFolderEvent(buttonDOM) {
     window.gCurrentlyMovingFolder = 0;
 }
 
+/*
 function renameFileButtonEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
     var fileName = buttonElement.parent().find("> span.file-name").text();
@@ -459,6 +462,7 @@ function deleteFileEvent(buttonDOM) {
         });
     }
 }
+*/
 
 function requestSubFiles(parentFolderId) {
     var requestUrl = "/fileshare/get-sub-files?parentFolderId=" + parentFolderId;
@@ -474,8 +478,8 @@ function requestSubFiles(parentFolderId) {
                 </li>\n
                 <li>\n
                     <form method="POST" action="/fileshare/upload-file" enctype="multipart/form-data">\n
-                        <input class="file-input" type="file" name="file"/>\n
                         <button onclick="uploadFileEvent(this)" class="upload-file-btn" type="button">Upload</button>\n
+                        <input class="file-input" type="file" name="file"/>\n
                     </form>\n
                 </li>\n
             </ul>`;
@@ -495,12 +499,14 @@ function requestSubFiles(parentFolderId) {
                     `<li fileId="${file['id']}">\n
                         <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
                         <span class="file-name">${file['name']}/</span>\n
+                        <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
                      </li>\n`
                 );
             } else if (file['fileType'] == "FILE") {  // insert a file list entry
                 nestedFilesList.append(
                     `<li fileId="${file['id']}">\n
                         <span class="file-name">${file['name']}</span>\n
+                        <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
                      </li>\n`
                 );
             }
