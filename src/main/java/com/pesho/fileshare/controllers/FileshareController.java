@@ -94,22 +94,21 @@ public class FileshareController {
         return Collections.singletonMap("success", false);
     }
 
-    /*
     @ResponseBody
-    @RequestMapping(value = "/fileshare/rename-folder", method = RequestMethod.PATCH,
+    @RequestMapping(value = "/fileshare/rename-file", method = RequestMethod.PATCH,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Boolean> renameFolder(Long folderId, String newFolderName) {
-        Optional<Folder> folderOpt = folderRepository.findById(folderId);
+    public Map<String, Boolean> renameFolder(@RequestParam("fileId") Long fileId,
+                                             @RequestParam("newFileName") String newFileName) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
 
-        if (folderOpt.isPresent()) {
-            Folder folder = folderOpt.get();
-            folder.setName(newFolderName);
-            folderRepository.save(folder);
+        if (fileOpt.isPresent()) {
+            File file = fileOpt.get();
+            file.setName(newFileName);
+            fileRepository.save(file);
             return Collections.singletonMap("success", true);
         }
         return Collections.singletonMap("success", false);
     }
-    */
 
     @ResponseBody
     @RequestMapping(value = "/fileshare/delete-file", method = RequestMethod.DELETE,
