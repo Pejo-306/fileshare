@@ -5,24 +5,18 @@
     <title>Fileshare</title>
 </head>
 <body>
-<div>
-    <span th:text="${message}"/>
-</div>
-<br>
-<h1>Welcome!</h1>
+    <h1>Welcome!</h1>
 
-<div sec:authorize="isAnonymous()">
-    <a th:href="@{/login}">Sign in</a><br>
-    <a th:href="@{/register}">Register</a><br>
-</div>
-<div sec:authorize="isAuthenticated()">
-    <h3 th:inline="text">Hello [[${#httpServletRequest.remoteUser}]]!</h3>
-    <form th:action="@{/logout}" method="POST">
-        <input type="submit" value="Sign out"/>
-    </form>
-    <a th:href="@{/fileshare}">View files</a>
-</div>
-
-<p>Click <a th:href="@{/hello}">here</a> to see a greeting.</p>
+    <div sec:authorize="isAnonymous()">
+        <a th:href="@{/login}">Sign in</a><br>
+        <a th:href="@{/register}">Register</a><br>
+    </div>
+    <div sec:authorize="isAuthenticated()">
+        <h3 th:inline="text">Hello [[${#httpServletRequest.remoteUser}]]!</h3>
+        <form th:action="@{/logout}" method="POST">
+            <input type="submit" value="Sign out"/>
+        </form>
+        <a th:href="@{/fileshare}">View files</a>
+    </div>
 </body>
 </html>
