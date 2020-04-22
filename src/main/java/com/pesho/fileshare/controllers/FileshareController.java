@@ -1,8 +1,10 @@
 package com.pesho.fileshare.controllers;
 
+import com.pesho.fileshare.models.DownloadToken;
 import com.pesho.fileshare.models.File;
 import com.pesho.fileshare.models.FileType;
 import com.pesho.fileshare.models.User;
+import com.pesho.fileshare.repositories.DownloadTokenRepository;
 import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.FileStorageService;
@@ -28,6 +30,9 @@ public class FileshareController {
 
     @Autowired
     private FileRepository fileRepository;
+
+    @Autowired
+    private DownloadTokenRepository downloadTokenRepository;
 
     @Autowired
     private SecurityService securityService;
@@ -146,5 +151,28 @@ public class FileshareController {
             return Collections.singletonMap("success", false);
         }
         return Collections.singletonMap("success", false);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/get-download-link", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, String> getDownloadLink(@RequestParam("fileId") Long fileId) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
+
+        if (fileOpt.isPresent()) {
+            File file = fileOpt.get();
+            Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByFile(file);
+            DownloadToken downloadToken;
+
+            if (downloadTokenOpt.isPresent()) {
+                downloadToken = downloadTokenOpt.get();
+            } else {
+                downloadToken = new DownloadToken(file);
+                downloadTokenRepository.save(downloadToken);
+            }
+            String downloadLink = "http://localhost:8080/fileshare/download-file?token=" + downloadToken.getToken();
+            return Collections.singletonMap("downloadLink", downloadLink);
+        }
+        return Collections.singletonMap("downloadLink", "INVALID_FILE_ID");
     }
 }

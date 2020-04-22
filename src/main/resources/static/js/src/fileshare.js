@@ -319,14 +319,23 @@ function nonMoveState(additionalSelector) {
 
 function getDownloadLinkEvent(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var downloadLinkFields =
-        `<div class="file-download-fields">
-            <textarea rows="1" cols="50">Hello World</textarea>
-            <button onclick="destroyDownloadLink(this)" type="button">Destroy Link</button>
-         </div>`;
+    var fileId = parseInt(buttonElement.parent().attr("fileId"));
+    var requestUrl = "/fileshare/get-download-link?fileId=" + fileId;
 
-    buttonElement.after(downloadLinkFields);
-    buttonElement.remove();
+    $.get(requestUrl, function(data) {
+        if (data["downloadLink"] == "INVALID_FILE_ID") {
+            alert("Error: couldn't get download link.");
+        } else {
+            var downloadLinkFields =
+                `<div class="file-download-fields">
+                    <textarea rows="1" cols="50">${data["downloadLink"]}</textarea>
+                    <button onclick="destroyDownloadLink(this)" type="button">Destroy Link</button>
+                 </div>`;
+
+            buttonElement.after(downloadLinkFields);
+            buttonElement.remove();
+        }
+    });
 }
 
 function destroyDownloadLink(buttonDOM) {

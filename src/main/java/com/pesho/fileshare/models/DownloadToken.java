@@ -19,9 +19,7 @@ public class DownloadToken {
     @JoinColumn(nullable = false, name = "file_id")
     private File file;
 
-    public DownloadToken() {
-        super();
-    }
+    public DownloadToken() {}
 
     public DownloadToken(File file) {
         this.file = file;
