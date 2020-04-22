@@ -32,8 +32,8 @@ public class ConfirmationToken {
         super();
 
         this.user = user;
-        createdDate = new Date();
-        token = UUID.randomUUID().toString();
+        this.createdDate = new Date();
+        this.token = UUID.randomUUID().toString();
     }
 
     public Long getId() {
