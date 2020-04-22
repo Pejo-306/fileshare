@@ -29,8 +29,8 @@ function newFolderButtonEvent(buttonDOM) {
     var newFolderForm =
         `<span>
             <input class="new-file-name" type="text" name="name" placeholder="New Folder"/>
-            <button onclick="addFolderEvent(this)" type="Button">Add</button>
-            <button onclick="cancelAddFolderEvent(this)" type="Button">Cancel</button>
+            <button onclick="addFolderEvent(this)" type="button">Add</button>
+            <button onclick="cancelAddFolderEvent(this)" type="button">Cancel</button>
          </span>`;
 
     // hide 'New Folder' button
@@ -161,6 +161,7 @@ function duringRenameState(additionalSelector) {
     var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
     var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
     var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
+    var downloadFileFields = $(`${additionalSelector}.file-download-fields`);
 
     // hide "Rename", "Delete", "Move" and "Place" buttons
     placeFileButtons.hide();
@@ -170,6 +171,8 @@ function duringRenameState(additionalSelector) {
     // disable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", true);
     uploadFileButtons.parent().children().prop("disabled", true);
+    // hide download file fields
+    downloadFileFields.hide();
 }
 
 function nonRenameState(additionalSelector) {
@@ -178,6 +181,7 @@ function nonRenameState(additionalSelector) {
     var moveFileButtons = $(`${additionalSelector}.file-move-btn`);
     var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
     var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
+    var downloadFileFields = $(`${additionalSelector}.file-download-fields`);
 
     // show "Rename", "Delete" and "Move" buttons
     renameFileButtons.show();
@@ -186,6 +190,8 @@ function nonRenameState(additionalSelector) {
     // enable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", false);
     uploadFileButtons.parent().children().prop("disabled", false);
+    // show download file fields
+    downloadFileFields.show();
 }
 
 function deleteFileEvent(buttonDOM) {
@@ -271,6 +277,7 @@ function duringMoveState(additionalSelector) {
     var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
     var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
     var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
+    var downloadFileFields = $(`${additionalSelector}.file-download-fields`);
 
     // show "Place" buttons
     placeFileButtons.show();
@@ -281,6 +288,8 @@ function duringMoveState(additionalSelector) {
     // disable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", true);
     uploadFileButtons.parent().children().prop("disabled", true);
+    // hide download file fields
+    downloadFileFields.hide();
 }
 
 function nonMoveState(additionalSelector) {
@@ -291,6 +300,7 @@ function nonMoveState(additionalSelector) {
     var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
     var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
     var cancelPlaceFileButton = $(".file-cancel-place-btn");
+    var downloadFileFields = $(`${additionalSelector}.file-download-fields`);
 
     // hide "Place" buttons
     placeFileButtons.hide();
@@ -303,6 +313,29 @@ function nonMoveState(additionalSelector) {
     uploadFileButtons.parent().children().prop("disabled", false);
     // Remove "Cancel" place button
     cancelPlaceFileButton.remove();
+    // show download file fields
+    downloadFileFields.show();
+}
+
+function getDownloadLinkEvent(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var downloadLinkFields =
+        `<div class="file-download-fields">
+            <textarea rows="1" cols="50">Hello World</textarea>
+            <button onclick="destroyDownloadLink(this)" type="button">Destroy Link</button>
+         </div>`;
+
+    buttonElement.after(downloadLinkFields);
+    buttonElement.remove();
+}
+
+function destroyDownloadLink(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+    var getDownloadLinkButton =
+        `<button onclick="getDownloadLinkEvent(this)" class="file-download-fields" type="button">Get Download Link</button>`;
+
+    buttonElement.parent().after(getDownloadLinkButton);
+    buttonElement.parent().remove();
 }
 
 function requestSubFiles(parentFolderId) {
@@ -339,23 +372,25 @@ function requestSubFiles(parentFolderId) {
             $.each(data, function(index, file) {
                 if (file['fileType'] == "DIRECTORY") {  // insert a directory list entry
                     nestedFilesList.append(
-                        `<li fileId="${file['id']}" fileType="D">\n
-                            <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>\n
-                            <span class="file-name">${file['name']}/</span>\n
+                        `<li fileId="${file['id']}" fileType="D">
+                            <button onclick="expandFolder(this)" class="folder-expand folder-unopened" type="button">+</button>
+                            <span class="file-name">${file['name']}/</span>
                             <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
                             <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
                             <button onclick="moveFileEvent(this)" class="file-move-btn" type="button">Move</button>
                             <button onclick="placeFileEvent(this)" class="file-place-btn" type="button">Place</button>
-                         </li>\n`
+                            <button onclick="getDownloadLinkEvent(this)" class="file-download-fields" type="button">Get Download Link</button>
+                         </li>`
                     );
                 } else if (file['fileType'] == "FILE") {  // insert a file list entry
                     nestedFilesList.append(
-                        `<li fileId="${file['id']}" fileType="F">\n
-                            <span class="file-name">${file['name']}</span>\n
+                        `<li fileId="${file['id']}" fileType="F">
+                            <span class="file-name">${file['name']}</span>
                             <button onclick="renameFileButtonEvent(this)" class="file-rename-btn" type="button">Rename</button>
                             <button onclick="deleteFileEvent(this)" class="file-delete-btn" type="button">Delete</button>
                             <button onclick="moveFileEvent(this)" class="file-move-btn" type="button">Move</button>
-                         </li>\n`
+                            <button onclick="getDownloadLinkEvent(this)" class="file-download-fields" type="button">Get Download Link</button>
+                         </li>`
                     );
                 }
             });
@@ -382,6 +417,7 @@ function normalState(additionalSelector) {
     var deleteFileButtons = $(`${additionalSelector}.file-delete-btn`);
     var newFolderButtons = $(`${additionalSelector}.new-folder-btn`);
     var uploadFileButtons = $(`${additionalSelector}.upload-file-btn`);
+    var downloadFileFields = $(`${additionalSelector}.file-download-fields`);
 
     // hide "Place" buttons
     placeFileButtons.hide();
@@ -392,6 +428,8 @@ function normalState(additionalSelector) {
     // enable "New Folder" and "Upload File" buttons
     newFolderButtons.prop("disabled", false);
     uploadFileButtons.parent().children().prop("disabled", false);
+    // show download file fields
+    downloadFileFields.show();
 }
 
 $(document).ready(function() {
