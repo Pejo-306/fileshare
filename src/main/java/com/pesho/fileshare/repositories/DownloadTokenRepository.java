@@ -10,5 +10,5 @@ public interface DownloadTokenRepository extends JpaRepository<DownloadToken, Lo
 
     Optional<DownloadToken> findByFile(File file);
 
-    DownloadToken findByToken(String token);
+    Optional<DownloadToken> findByToken(String token);
 }

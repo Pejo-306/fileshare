@@ -10,14 +10,16 @@ import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.FileStorageService;
 import com.pesho.fileshare.services.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -170,7 +172,7 @@ public class FileshareController {
                 downloadToken = new DownloadToken(file);
                 downloadTokenRepository.save(downloadToken);
             }
-            String downloadLink = "http://localhost:8080/fileshare/download-file?token=" + downloadToken.getToken();
+            String downloadLink = "http://localhost:8080/fileshare/download-file/" + downloadToken.getToken();
             return Collections.singletonMap("downloadLink", downloadLink);
         }
         return Collections.singletonMap("downloadLink", "INVALID_FILE_ID");
@@ -196,5 +198,24 @@ public class FileshareController {
             }
         }
         return Collections.singletonMap("success", false);
+    }
+
+    @RequestMapping(value = "/fileshare/download-file/{token}", method = RequestMethod.GET)
+    public ResponseEntity<Resource> downloadFile(@PathVariable String token) {
+        Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByToken(token);
+
+        if (downloadTokenOpt.isPresent()) {
+            DownloadToken downloadToken = downloadTokenOpt.get();
+            File file = downloadToken.getFile();
+
+            if (file.getFileType() == FileType.FILE) {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                        .body(new ByteArrayResource(file.getContent()));
+            } else if (file.getFileType() == FileType.DIRECTORY){
+                // TODO
+            }
+        }
+        return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 }
