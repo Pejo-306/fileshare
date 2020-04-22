@@ -328,7 +328,7 @@ function getDownloadLinkEvent(buttonDOM) {
         } else {
             var downloadLinkFields =
                 `<div class="file-download-fields">
-                    <textarea rows="1" cols="50">${data["downloadLink"]}</textarea>
+                    <textarea rows="1" cols="100">${data["downloadLink"]}</textarea>
                     <button onclick="destroyDownloadLink(this)" type="button">Destroy Link</button>
                  </div>`;
 
@@ -340,11 +340,26 @@ function getDownloadLinkEvent(buttonDOM) {
 
 function destroyDownloadLink(buttonDOM) {
     var buttonElement = $(buttonDOM);
-    var getDownloadLinkButton =
-        `<button onclick="getDownloadLinkEvent(this)" class="file-download-fields" type="button">Get Download Link</button>`;
+    var fileId = parseInt(buttonElement.parent().parent().attr("fileId"));
+    var requestUrl = "/fileshare/destroy-download-link";
+    var parameters = { fileId: fileId };
 
-    buttonElement.parent().after(getDownloadLinkButton);
-    buttonElement.parent().remove();
+    $.ajax({
+        url: requestUrl,
+        type: "DELETE",
+        data: parameters,
+        success: function(data) {
+            if (data["success"]) {
+                var getDownloadLinkButton =
+                    `<button onclick="getDownloadLinkEvent(this)" class="file-download-fields" type="button">Get Download Link</button>`;
+
+                buttonElement.parent().after(getDownloadLinkButton);
+                buttonElement.parent().remove();
+            } else {
+                alert("Error: unable to destroy download link");
+            }
+        }
+    });
 }
 
 function requestSubFiles(parentFolderId) {

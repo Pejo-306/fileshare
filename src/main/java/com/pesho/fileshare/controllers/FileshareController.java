@@ -175,4 +175,26 @@ public class FileshareController {
         }
         return Collections.singletonMap("downloadLink", "INVALID_FILE_ID");
     }
+
+    @ResponseBody
+    @RequestMapping(value = "/fileshare/destroy-download-link", method = RequestMethod.DELETE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Boolean> destroyDownloadLink(@RequestParam("fileId") Long fileId) {
+        Optional<File> fileOpt = fileRepository.findById(fileId);
+
+        if (fileOpt.isPresent()) {
+            File file = fileOpt.get();
+            Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByFile(file);
+
+            if (downloadTokenOpt.isPresent()) {
+                DownloadToken downloadToken = downloadTokenOpt.get();
+
+                downloadTokenRepository.delete(downloadToken);
+                return Collections.singletonMap("success", true);
+            } else {
+                return Collections.singletonMap("success", false);
+            }
+        }
+        return Collections.singletonMap("success", false);
+    }
 }
