@@ -21,9 +21,13 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 public class UserController {
@@ -59,9 +63,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
-    public String registration(Model model, @ModelAttribute("user") User user, BindingResult bindingResult) {
-        // Validate the user's input
-        // and format the appropriate error messages, if any
+    public String registration(HttpServletRequest request, Model model, @ModelAttribute("user") User user,
+                               BindingResult bindingResult) throws MalformedURLException {
+        // Validate the user's input and format the appropriate error messages, if any
         userValidator.validate(user, bindingResult);
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", getErrorMessages(bindingResult));
@@ -69,23 +73,26 @@ public class UserController {
         }
         userService.save(user);
 
-        // create a new root folder for the user
+        // Create a new root folder for the user
         File rootFolder = new File(FileType.DIRECTORY, "root", user, null, null);
         fileRepository.save(rootFolder);
 
         // Generate an email confirmation token and send it to the newly registered user
         ConfirmationToken confirmationToken = new ConfirmationToken(user);
         confirmationTokenRepository.save(confirmationToken);
-        emailSenderService.sendEmail(generateVerificationEmail(user.getEmail(), confirmationToken));
+        emailSenderService.sendEmail(generateVerificationEmail(user.getEmail(), confirmationToken, request.getRequestURL().toString()));
 
         return "redirect:/home";
     }
 
-    @RequestMapping(value = "/confirm", method = { RequestMethod.GET, RequestMethod.POST })
+    @RequestMapping(value = "/confirm", method = RequestMethod.GET)
     public String confirmUserAccount(Model model, @RequestParam("token") String token) {
-        ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token);
-        if(confirmationToken != null) {
-            User user = userRepository.findByEmailIgnoreCase(confirmationToken.getUser().getEmail());
+        Optional<ConfirmationToken> confirmationTokenOpt = confirmationTokenRepository.findByToken(token);
+
+        if(confirmationTokenOpt.isPresent()) {
+            ConfirmationToken confirmationToken = confirmationTokenOpt.get();
+            User user = confirmationToken.getUser();
+
             user.setEnabled(true);
             userRepository.save(user);
             return "account-verified";
@@ -105,14 +112,21 @@ public class UserController {
         return "login";
     }
 
-    private SimpleMailMessage generateVerificationEmail(String email, ConfirmationToken confirmationToken) {
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
+    private SimpleMailMessage generateVerificationEmail(String email, ConfirmationToken confirmationToken,
+                                                        String requestURL) throws MalformedURLException {
+        // Build the verification URL
+        URL url = new URL(requestURL);
+        StringBuilder verificationLink = new StringBuilder();
+        verificationLink.append("http://localhost:");
+        verificationLink.append(url.getPort());
+        verificationLink.append("/confirm?token=");
+        verificationLink.append(confirmationToken.getToken());
 
+        // Build the mail message with the verification link
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(email);
         mailMessage.setSubject("Verify your registration");
-        mailMessage.setFrom("noreply@pesho.com");
-        mailMessage.setText("To confirm your account, please click here : "
-                + "http://localhost:8080/confirm?token=" + confirmationToken.getToken());
+        mailMessage.setText("To confirm your account, please click here : " + verificationLink.toString());
         return mailMessage;
     }
 
@@ -120,10 +134,11 @@ public class UserController {
         List<String> errorMessages = new ArrayList<>();
 
         for (ObjectError err : bindingResult.getAllErrors()) {
-            StringBuilder errMsg = new StringBuilder("");
+            StringBuilder errMsg = new StringBuilder();
+
             errMsg.append(((FieldError)err).getField());
             errMsg.append(": ");
-            errMsg.append(validationProperties.get(err.getCode().toString()));
+            errMsg.append(validationProperties.get(err.getCode()));
             errorMessages.add(errMsg.toString());
         }
         return errorMessages;
