@@ -22,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 
 @Controller
@@ -201,20 +202,18 @@ public class FileshareController {
     }
 
     @RequestMapping(value = "/fileshare/download-file/{token}", method = RequestMethod.GET)
-    public ResponseEntity<Resource> downloadFile(@PathVariable String token) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable String token) throws IOException  {
         Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByToken(token);
 
         if (downloadTokenOpt.isPresent()) {
             DownloadToken downloadToken = downloadTokenOpt.get();
             File file = downloadToken.getFile();
+            String filename = (file.getFileType() == FileType.DIRECTORY) ? file.getName() + ".zip" : file.getName();
+            byte[] downloadableFileByteArray = fileStorageService.getDownloadableFileByteArray(file);
 
-            if (file.getFileType() == FileType.FILE) {
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
-                        .body(new ByteArrayResource(file.getContent()));
-            } else if (file.getFileType() == FileType.DIRECTORY){
-                // TODO
-            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(new ByteArrayResource(downloadableFileByteArray));
         }
         return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
