@@ -8,7 +8,6 @@ import com.pesho.fileshare.repositories.DownloadTokenRepository;
 import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.FileStorageService;
-import com.pesho.fileshare.services.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -41,15 +40,13 @@ public class FileshareController {
     private DownloadTokenRepository downloadTokenRepository;
 
     @Autowired
-    private SecurityService securityService;
-
-    @Autowired
     private FileStorageService fileStorageService;
 
     @RequestMapping(value = "/fileshare", method = RequestMethod.GET)
     public String viewFileshare(Model model, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName());
         File rootFolder = user.getRootFolder();
+
         model.addAttribute("rootFolder", rootFolder);
         return "fileshare";
     }
@@ -162,7 +159,8 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/get-download-link", method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, String> getDownloadLink(HttpServletRequest request, @RequestParam("fileId") Long fileId) throws MalformedURLException {
+    public Map<String, String> getDownloadLink(HttpServletRequest request,
+                                               @RequestParam("fileId") Long fileId) throws MalformedURLException {
         Optional<File> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
@@ -182,7 +180,7 @@ public class FileshareController {
 
             downloadLink.append("http://localhost:");
             downloadLink.append(url.getPort());
-            downloadLink.append("/fileshare/download-file/");
+            downloadLink.append("/fileshare/download-file?token=");
             downloadLink.append(downloadToken.getToken());
             return Collections.singletonMap("downloadLink", downloadLink.toString());
         }
@@ -211,8 +209,8 @@ public class FileshareController {
         return Collections.singletonMap("success", false);
     }
 
-    @RequestMapping(value = "/fileshare/download-file/{token}", method = RequestMethod.GET)
-    public ResponseEntity<Resource> downloadFile(@PathVariable String token) throws IOException  {
+    @RequestMapping(value = "/fileshare/download-file", method = RequestMethod.GET)
+    public ResponseEntity<Resource> downloadFile(@RequestParam("token") String token) throws IOException  {
         Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByToken(token);
 
         if (downloadTokenOpt.isPresent()) {

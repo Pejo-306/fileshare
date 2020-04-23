@@ -8,7 +8,6 @@ import com.pesho.fileshare.repositories.ConfirmationTokenRepository;
 import com.pesho.fileshare.repositories.FileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.EmailSenderService;
-import com.pesho.fileshare.services.SecurityService;
 import com.pesho.fileshare.services.UserService;
 import com.pesho.fileshare.validators.UserValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,9 +45,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private SecurityService securityService;
 
     @Autowired
     private EmailSenderService emailSenderService;
