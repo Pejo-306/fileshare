@@ -69,6 +69,7 @@ public class FileStorageService {
             zipOutputStream.write(file.getContent());
             zipOutputStream.closeEntry();
         } else if (file.getFileType() == FileType.DIRECTORY) {
+            zipOutputStream.putNextEntry(new ZipEntry(prefix + file.getName() + "/"));
             for (File nestedFile : file.getNestedFiles()) {
                 zipDownloadableFileByteArray(nestedFile, prefix + file.getName() + "/", zipOutputStream);
             }
