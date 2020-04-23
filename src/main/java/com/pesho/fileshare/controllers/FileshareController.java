@@ -22,7 +22,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 @Controller
@@ -159,7 +162,7 @@ public class FileshareController {
     @ResponseBody
     @RequestMapping(value = "/fileshare/get-download-link", method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, String> getDownloadLink(@RequestParam("fileId") Long fileId) {
+    public Map<String, String> getDownloadLink(HttpServletRequest request, @RequestParam("fileId") Long fileId) throws MalformedURLException {
         Optional<File> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
@@ -173,8 +176,15 @@ public class FileshareController {
                 downloadToken = new DownloadToken(file);
                 downloadTokenRepository.save(downloadToken);
             }
-            String downloadLink = "http://localhost:8080/fileshare/download-file/" + downloadToken.getToken();
-            return Collections.singletonMap("downloadLink", downloadLink);
+
+            URL url = new URL(request.getRequestURL().toString());
+            StringBuilder downloadLink = new StringBuilder();
+
+            downloadLink.append("http://localhost:");
+            downloadLink.append(url.getPort());
+            downloadLink.append("/fileshare/download-file/");
+            downloadLink.append(downloadToken.getToken());
+            return Collections.singletonMap("downloadLink", downloadLink.toString());
         }
         return Collections.singletonMap("downloadLink", "INVALID_FILE_ID");
     }
