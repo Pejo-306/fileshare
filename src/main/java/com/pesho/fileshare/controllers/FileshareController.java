@@ -1,11 +1,11 @@
 package com.pesho.fileshare.controllers;
 
 import com.pesho.fileshare.models.DownloadToken;
-import com.pesho.fileshare.models.File;
-import com.pesho.fileshare.models.FileType;
+import com.pesho.fileshare.models.DBFile;
+import com.pesho.fileshare.models.DBFileType;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.DownloadTokenRepository;
-import com.pesho.fileshare.repositories.FileRepository;
+import com.pesho.fileshare.repositories.DBFileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ public class FileshareController {
     private UserRepository userRepository;
 
     @Autowired
-    private FileRepository fileRepository;
+    private DBFileRepository fileRepository;
 
     @Autowired
     private DownloadTokenRepository downloadTokenRepository;
@@ -45,7 +45,7 @@ public class FileshareController {
     @RequestMapping(value = "/fileshare", method = RequestMethod.GET)
     public String viewFileshare(Model model, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName());
-        File rootFolder = user.getRootFolder();
+        DBFile rootFolder = user.getRootFolder();
 
         model.addAttribute("rootFolder", rootFolder);
         return "fileshare";
@@ -56,11 +56,11 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Map<String, String>> getSubFiles(@RequestParam("parentFolderId") Long parentFolderId) {
         List<Map<String, String>> result = null;
-        Optional<File> parentFolder = fileRepository.findById(parentFolderId);
+        Optional<DBFile> parentFolder = fileRepository.findById(parentFolderId);
 
         if (parentFolder.isPresent()) {
             result = new ArrayList<>();
-            for (File file : parentFolder.get().getNestedFiles()) {
+            for (DBFile file : parentFolder.get().getNestedFiles()) {
                 Map<String, String> triplet = new HashMap<>();
                 triplet.put("id", file.getId().toString());
                 triplet.put("fileType", file.getFileType().toString());
@@ -76,11 +76,11 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> createSubFolder(@RequestParam("parentFolderId") Long parentFolderId,
                                                 @RequestParam("folderName") String folderName) {
-        Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
+        Optional<DBFile> parentFolderOpt = fileRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
-            File parentFolder = parentFolderOpt.get();
-            File newFolder = new File(FileType.DIRECTORY, folderName, parentFolder.getUser(), null, parentFolder);
+            DBFile parentFolder = parentFolderOpt.get();
+            DBFile newFolder = new DBFile(DBFileType.DIRECTORY, folderName, parentFolder.getUser(), null, parentFolder);
 
             fileRepository.save(newFolder);
             return Collections.singletonMap("success", true);
@@ -93,11 +93,11 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> uploadFile(@RequestParam("file") MultipartFile file,
                                            @RequestParam("parentFolderId") Long parentFolderId) {
-        Optional<File> parentFolderOpt = fileRepository.findById(parentFolderId);
+        Optional<DBFile> parentFolderOpt = fileRepository.findById(parentFolderId);
 
         if (parentFolderOpt.isPresent()) {
-            File parentFolder = parentFolderOpt.get();
-            File newFile = fileStorageService.storeFile(file, parentFolder.getUser(), parentFolder);
+            DBFile parentFolder = parentFolderOpt.get();
+            DBFile newFile = fileStorageService.storeFile(file, parentFolder.getUser(), parentFolder);
 
             return Collections.singletonMap("success", true);
         }
@@ -109,10 +109,10 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> renameFolder(@RequestParam("fileId") Long fileId,
                                              @RequestParam("newFileName") String newFileName) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
+        Optional<DBFile> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
-            File file = fileOpt.get();
+            DBFile file = fileOpt.get();
 
             file.setName(newFileName);
             fileRepository.save(file);
@@ -125,7 +125,7 @@ public class FileshareController {
     @RequestMapping(value = "/fileshare/delete-file", method = RequestMethod.DELETE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> deleteFile(@RequestParam("fileId") Long fileId) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
+        Optional<DBFile> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
             fileRepository.delete(fileOpt.get());
@@ -139,14 +139,14 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> moveFile(@RequestParam("fileId") Long fileId,
                                          @RequestParam("newParentId") Long newParentId) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
-        Optional<File> newParentOpt = fileRepository.findById(newParentId);
+        Optional<DBFile> fileOpt = fileRepository.findById(fileId);
+        Optional<DBFile> newParentOpt = fileRepository.findById(newParentId);
 
         if (fileOpt.isPresent() && newParentOpt.isPresent()) {
-            File file = fileOpt.get();
-            File newParent = newParentOpt.get();
+            DBFile file = fileOpt.get();
+            DBFile newParent = newParentOpt.get();
 
-            if (newParent.getFileType() == FileType.DIRECTORY) {  // allow movement only to folders
+            if (newParent.getFileType() == DBFileType.DIRECTORY) {  // allow movement only to folders
                 file.setParent(newParent);
                 fileRepository.save(file);
                 return Collections.singletonMap("success", true);
@@ -161,10 +161,10 @@ public class FileshareController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, String> getDownloadLink(HttpServletRequest request,
                                                @RequestParam("fileId") Long fileId) throws MalformedURLException {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
+        Optional<DBFile> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
-            File file = fileOpt.get();
+            DBFile file = fileOpt.get();
             Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByFile(file);
             DownloadToken downloadToken;
 
@@ -191,10 +191,10 @@ public class FileshareController {
     @RequestMapping(value = "/fileshare/destroy-download-link", method = RequestMethod.DELETE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Boolean> destroyDownloadLink(@RequestParam("fileId") Long fileId) {
-        Optional<File> fileOpt = fileRepository.findById(fileId);
+        Optional<DBFile> fileOpt = fileRepository.findById(fileId);
 
         if (fileOpt.isPresent()) {
-            File file = fileOpt.get();
+            DBFile file = fileOpt.get();
             Optional<DownloadToken> downloadTokenOpt = downloadTokenRepository.findByFile(file);
 
             if (downloadTokenOpt.isPresent()) {
@@ -215,8 +215,8 @@ public class FileshareController {
 
         if (downloadTokenOpt.isPresent()) {
             DownloadToken downloadToken = downloadTokenOpt.get();
-            File file = downloadToken.getFile();
-            String filename = (file.getFileType() == FileType.DIRECTORY) ? file.getName() + ".zip" : file.getName();
+            DBFile file = downloadToken.getFile();
+            String filename = (file.getFileType() == DBFileType.DIRECTORY) ? file.getName() + ".zip" : file.getName();
             byte[] downloadableFileByteArray = fileStorageService.getDownloadableFileByteArray(file);
 
             return ResponseEntity.ok()

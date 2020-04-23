@@ -1,10 +1,10 @@
 package com.pesho.fileshare.services;
 
 import com.pesho.fileshare.exceptions.FileStorageException;
-import com.pesho.fileshare.models.File;
-import com.pesho.fileshare.models.FileType;
+import com.pesho.fileshare.models.DBFile;
+import com.pesho.fileshare.models.DBFileType;
 import com.pesho.fileshare.models.User;
-import com.pesho.fileshare.repositories.FileRepository;
+import com.pesho.fileshare.repositories.DBFileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -20,9 +20,9 @@ import java.util.zip.ZipOutputStream;
 public class FileStorageService {
 
     @Autowired
-    private FileRepository fileRepository;
+    private DBFileRepository fileRepository;
 
-    public File storeFile(MultipartFile file, User owner, File parent) {
+    public DBFile storeFile(MultipartFile file, User owner, DBFile parent) {
         // Normalize file name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
 
@@ -32,19 +32,19 @@ public class FileStorageService {
                 throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
             }
 
-            File newFile = new File(FileType.FILE, fileName, owner, file.getBytes(), parent);
+            DBFile newFile = new DBFile(DBFileType.FILE, fileName, owner, file.getBytes(), parent);
             return fileRepository.save(newFile);
         } catch (IOException ex) {
             throw new FileStorageException("Could not store file " + fileName + ". Please try again!", ex);
         }
     }
 
-    public byte[] getDownloadableFileByteArray(File file) throws IOException {
+    public byte[] getDownloadableFileByteArray(DBFile file) throws IOException {
         byte[] result = null;
 
-        if (file.getFileType() == FileType.FILE) {
+        if (file.getFileType() == DBFileType.FILE) {
             result = file.getContent();
-        } else if (file.getFileType() == FileType.DIRECTORY) {
+        } else if (file.getFileType() == DBFileType.DIRECTORY) {
             // create a buffered byte array output stream and pass it to a zip output stream
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
@@ -63,14 +63,14 @@ public class FileStorageService {
         return result;
     }
 
-    private void zipDownloadableFileByteArray(File file, String prefix, ZipOutputStream zipOutputStream) throws IOException {
-        if (file.getFileType() == FileType.FILE) {
+    private void zipDownloadableFileByteArray(DBFile file, String prefix, ZipOutputStream zipOutputStream) throws IOException {
+        if (file.getFileType() == DBFileType.FILE) {
             zipOutputStream.putNextEntry(new ZipEntry(prefix + file.getName()));
             zipOutputStream.write(file.getContent());
             zipOutputStream.closeEntry();
-        } else if (file.getFileType() == FileType.DIRECTORY) {
+        } else if (file.getFileType() == DBFileType.DIRECTORY) {
             zipOutputStream.putNextEntry(new ZipEntry(prefix + file.getName() + "/"));
-            for (File nestedFile : file.getNestedFiles()) {
+            for (DBFile nestedFile : file.getNestedFiles()) {
                 zipDownloadableFileByteArray(nestedFile, prefix + file.getName() + "/", zipOutputStream);
             }
         }

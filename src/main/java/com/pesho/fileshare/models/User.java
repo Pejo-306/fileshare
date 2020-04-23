@@ -30,8 +30,8 @@ public class User {
 
     private boolean enabled;
 
-    @OneToMany(mappedBy = "user")
-    private Set<File> files;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<DBFile> files;
 
     public Long getId() {
         return id;
@@ -81,17 +81,17 @@ public class User {
         this.enabled = enabled;
     }
 
-    public Set<File> getFiles() {
+    public Set<DBFile> getFiles() {
         return files;
     }
 
-    public void setFiles(Set<File> files) {
+    public void setFiles(Set<DBFile> files) {
         this.files = files;
     }
 
-    public File getRootFolder() {
+    public DBFile getRootFolder() {
         return files.stream()
-                .filter(file -> file.getFileType() == FileType.DIRECTORY)  // get only directories
+                .filter(file -> file.getFileType() == DBFileType.DIRECTORY)  // get only directories
                 .filter(file -> file.getParent() == null)  // root folder has no parent
                 .findFirst().orElseThrow(FileNotFoundException::new);
     }

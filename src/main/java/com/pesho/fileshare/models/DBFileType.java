@@ -1,12 +1,12 @@
 package com.pesho.fileshare.models;
 
-public enum FileType {
+public enum DBFileType {
 
     FILE("F"), DIRECTORY("D");
 
     private String code;
 
-    FileType(String code) {
+    DBFileType(String code) {
         this.code = code;
     }
 

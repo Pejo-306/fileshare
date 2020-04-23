@@ -5,15 +5,15 @@ import javax.validation.constraints.NotNull;
 import java.util.Set;
 
 @Entity
-@Table(name = "files")
-public class File {
+@Table(name = "dbfiles")
+public class DBFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    private FileType fileType;
+    private DBFileType fileType;
 
     @NotNull
     private String name;
@@ -27,16 +27,16 @@ public class File {
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
-    private File parent;
+    private DBFile parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-    private Set<File> nestedFiles;
+    private Set<DBFile> nestedFiles;
 
-    public File() {
+    public DBFile() {
         super();
     }
 
-    public File(@NotNull FileType fileType, @NotNull String name, User user, byte[] content, File parent) {
+    public DBFile(@NotNull DBFileType fileType, @NotNull String name, User user, byte[] content, DBFile parent) {
         this.fileType = fileType;
         this.name = name;
         this.user = user;
@@ -52,11 +52,11 @@ public class File {
         this.id = id;
     }
 
-    public FileType getFileType() {
+    public DBFileType getFileType() {
         return fileType;
     }
 
-    public void setFileType(FileType fileType) {
+    public void setFileType(DBFileType fileType) {
         this.fileType = fileType;
     }
 
@@ -84,19 +84,19 @@ public class File {
         this.content = content;
     }
 
-    public File getParent() {
+    public DBFile getParent() {
         return parent;
     }
 
-    public void setParent(File parent) {
+    public void setParent(DBFile parent) {
         this.parent = parent;
     }
 
-    public Set<File> getNestedFiles() {
+    public Set<DBFile> getNestedFiles() {
         return nestedFiles;
     }
 
-    public void setNestedFiles(Set<File> nestedFiles) {
+    public void setNestedFiles(Set<DBFile> nestedFiles) {
         this.nestedFiles = nestedFiles;
     }
 }

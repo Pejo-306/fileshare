@@ -1,11 +1,11 @@
 package com.pesho.fileshare.controllers;
 
 import com.pesho.fileshare.models.ConfirmationToken;
-import com.pesho.fileshare.models.File;
-import com.pesho.fileshare.models.FileType;
+import com.pesho.fileshare.models.DBFile;
+import com.pesho.fileshare.models.DBFileType;
 import com.pesho.fileshare.models.User;
 import com.pesho.fileshare.repositories.ConfirmationTokenRepository;
-import com.pesho.fileshare.repositories.FileRepository;
+import com.pesho.fileshare.repositories.DBFileRepository;
 import com.pesho.fileshare.repositories.UserRepository;
 import com.pesho.fileshare.services.EmailSenderService;
 import com.pesho.fileshare.services.UserService;
@@ -41,7 +41,7 @@ public class UserController {
     private ConfirmationTokenRepository confirmationTokenRepository;
 
     @Autowired
-    private FileRepository fileRepository;
+    private DBFileRepository fileRepository;
 
     @Autowired
     private UserService userService;
@@ -70,7 +70,7 @@ public class UserController {
         userService.save(user);
 
         // Create a new root folder for the user
-        File rootFolder = new File(FileType.DIRECTORY, "root", user, null, null);
+        DBFile rootFolder = new DBFile(DBFileType.DIRECTORY, "root", user, null, null);
         fileRepository.save(rootFolder);
 
         // Generate an email confirmation token and send it to the newly registered user

@@ -15,13 +15,13 @@ public class DownloadToken {
     @NotNull
     private String token;
 
-    @OneToOne(targetEntity = File.class, fetch = FetchType.EAGER)
+    @OneToOne(targetEntity = DBFile.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "file_id")
-    private File file;
+    private DBFile file;
 
     public DownloadToken() {}
 
-    public DownloadToken(File file) {
+    public DownloadToken(DBFile file) {
         this.file = file;
         this.token = UUID.randomUUID().toString();
     }
@@ -42,11 +42,11 @@ public class DownloadToken {
         this.token = token;
     }
 
-    public File getFile() {
+    public DBFile getFile() {
         return file;
     }
 
-    public void setFile(File file) {
+    public void setFile(DBFile file) {
         this.file = file;
     }
 }
