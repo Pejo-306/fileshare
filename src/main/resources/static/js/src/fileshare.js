@@ -328,7 +328,8 @@ function getDownloadLinkEvent(buttonDOM) {
         } else {
             var downloadLinkFields =
                 `<div class="file-download-fields">
-                    <textarea rows="1" cols="100">${data["downloadLink"]}</textarea>
+                    <textarea rows="1" cols="100" readonly>${data["downloadLink"]}</textarea>
+                    <button onclick="copyDownloadLink(this)" type="button">Copy Link</button>
                     <button onclick="destroyDownloadLink(this)" type="button">Destroy Link</button>
                  </div>`;
 
@@ -336,6 +337,13 @@ function getDownloadLinkEvent(buttonDOM) {
             buttonElement.remove();
         }
     });
+}
+
+function copyDownloadLink(buttonDOM) {
+    var buttonElement = $(buttonDOM);
+
+    buttonElement.parent().find("> textarea").select();
+    document.execCommand("copy");
 }
 
 function destroyDownloadLink(buttonDOM) {
