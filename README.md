@@ -111,7 +111,7 @@ said service to release port **3306**. Another option is to edit the
 ['docker-compose.yml'](docker-compose.yml) file to run the MySQL server on another
 port.
 
-A MySQL server will then be running on [localhost:3306](localhost:3306). You may also
+A MySQL server will then be running on __*localhost:3306*__. You may also
 access phpMyAdmin via a browser by visiting http://localhost:8183.
 
 ### A word on Gmail's SMTP service
@@ -137,7 +137,7 @@ $ mvn install
 tests require an active and valid connection to a MySQL server via JDBC. Maven
 attempts to establish a connection by utilizing the default values, specified
 in the ['application.properties'](src/main/resources/application.properties)
-file, i.e. it attempts to connect to [localhost:3306](localhost:3306) via the **root** user
+file, i.e. it attempts to connect to __*localhost:3306*__ via the **root** user
 with the password **root** and to create the project's schema in the
 **default_schema** database. If any of the listed conditions are not fulfilled,
 the installation fails. You have two options in this case:
@@ -159,13 +159,13 @@ $ java -jar -Dport=[PORT] -Ddbhost=[DBHOST] -Ddbuser=[DBUSER] -Dpassword=[PASSWO
 ```
 
 Where the environmental parameters have the following meanings:
-* PORT: the port on which the web service is launched;
-* DBHOST: the MySQL database host;
-* DBUSER: the MySQL database user;
-* PASSWORD: the MySQL database password for user 'dbuser';
-* SCHEMA: the MySQL database schema;
-* GMAIL_USERNAME: your Gmail account address;
-* GMAIL_PASSWORD: your Gmail account password.
+* **PORT**: the port on which the web service is launched;
+* **DBHOST**: the MySQL database host;
+* **DBUSER**: the MySQL database user;
+* **PASSWORD**: the MySQL database password for user 'dbuser';
+* **SCHEMA**: the MySQL database schema;
+* **GMAIL_USERNAME**: your Gmail account address;
+* **GMAIL_PASSWORD**: your Gmail account password.
 
 Afterwards, the web service will be available on [localhost:PORT](http://localhost:PORT).
 
@@ -176,7 +176,7 @@ $ java -jar -Dport=8000 -Ddbhost=localhost:3306 -Ddbuser=root -Dpassword=root -D
 ```
 
 This command will launch the web service on http://locahost:8000. The app will
-establish a connection with a MySQL server, located at [localhost:3306](localhost:3306),
+establish a connection with a MySQL server, located at __*localhost:3306*__,
 via the **root** user with the password **root** and use the **fileshare_schema**
 database to persist its data. Verification emails will be sent out by the
 **example@gmail.com** address. The web service will use the **password** password
